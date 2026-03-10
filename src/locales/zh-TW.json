@@ -1,0 +1,177 @@
+{
+  "app": {
+    "title": "世界盃"
+  },
+  "common": {
+    "cancel": "取消",
+    "claim": "領取",
+    "confirm": "確認",
+    "deposit": "存款",
+    "draw": "和局",
+    "even": "雙",
+    "inProgress": "進行中",
+    "kickoff": "開賽時間",
+    "live": "直播",
+    "loading": "載入中…",
+    "currencySymbol": "NT$",
+    "matchId": "賽事編號",
+    "round": "階段",
+    "venue": "場館",
+    "moreOdds": "更多賠率",
+    "notStarted": "未開始",
+    "odd": "單",
+    "over": "大於",
+    "placeBet": "下注",
+    "processing": "處理中…",
+    "save": "儲存",
+    "single": "單注",
+    "parlay": "串關",
+    "stake": "投注金額",
+    "status": "狀態",
+    "totalOdds": "總賠率",
+    "potentialPayout": "可能派彩",
+    "under": "小於",
+    "viewAll": "查看全部",
+    "vs": "對戰",
+    "watch": "觀看",
+    "watchLive": "觀看直播"
+  },
+  "nav": {
+    "home": "首頁",
+    "live": "投注紀錄",
+    "account": "帳戶",
+    "chat": "聊天"
+  },
+  "home": {
+    "hero": {
+      "tournament": "FIFA 世界盃",
+      "hosts": "美國 • 墨西哥 • 加拿大",
+      "liveMatches": "{count} 場直播賽事",
+      "hotOdds": "熱門賠率"
+    },
+    "liveNow": {
+      "title": "現正直播"
+    },
+    "upcoming": {
+      "title": "即將開賽",
+      "allDates": "全部"
+    }
+  },
+  "live": {
+    "title": "投注紀錄",
+    "subtitle": "您的投注紀錄",
+    "empty": {
+      "title": "尚無投注紀錄",
+      "subtitle": "您的投注紀錄將顯示於此"
+    },
+    "status": {
+      "pending": "待開獎",
+      "won": "已中獎",
+      "lost": "未中獎"
+    }
+  },
+  "account": {
+    "membership": {
+      "premium": "尊享會員"
+    },
+    "balance": {
+      "available": "可用餘額"
+    },
+    "deposit": {
+      "cta": "存入資金"
+    },
+    "stats": {
+      "totalBets": "投注總數",
+      "winRate": "勝率",
+      "memberSince": "加入時間"
+    },
+    "menu": {
+      "betHistory": "投注紀錄",
+      "paymentMethods": "付款方式",
+      "settings": "設定",
+      "helpSupport": "協助與支援"
+    },
+    "signOut": "登出",
+    "depositModal": {
+      "title": "存入資金",
+      "amount": "金額"
+    }
+  },
+  "chat": {
+    "title": "即時聊天",
+    "placeholder": "輸入訊息…",
+    "you": "你",
+    "close": "關閉聊天"
+  },
+  "theme": {
+    "toggleAriaLabel": "切換主題"
+  },
+  "betSlip": {
+    "title": "投注單"
+  },
+  "risk": {
+    "low": "低風險",
+    "medium": "中風險",
+    "high": "高風險"
+  },
+  "betConfirm": {
+    "title": "確認下注",
+    "success": {
+      "title": "下注成功！",
+      "subtitle": "祝你好運！"
+    },
+    "selectionSummary": "{count} 個選擇 - {mode}"
+  },
+  "match": {
+    "betType": {
+      "fullTimeResult": "全場賽果"
+    }
+  },
+  "schedule": {
+    "teams": {
+      "MEX": "墨西哥", "RSA": "南非", "KOR": "南韓", "CAN": "加拿大", "USA": "美國", "PAR": "巴拉圭",
+      "QAT": "卡達", "SUI": "瑞士", "BRA": "巴西", "MAR": "摩洛哥", "HAI": "海地", "SCO": "蘇格蘭",
+      "AUS": "澳洲", "GER": "德國", "CUW": "庫拉索", "NED": "荷蘭", "JPN": "日本", "CIV": "象牙海岸",
+      "ECU": "厄瓜多", "TUN": "突尼西亞", "ESP": "西班牙", "CPV": "維德角", "BEL": "比利時", "EGY": "埃及",
+      "KSA": "沙烏地阿拉伯", "URU": "烏拉圭", "IRN": "伊朗", "NZL": "紐西蘭", "FRA": "法國", "SEN": "塞內加爾",
+      "NOR": "挪威", "ARG": "阿根廷", "ALG": "阿爾及利亞", "AUT": "奧地利", "JOR": "約旦", "POR": "葡萄牙",
+      "ENG": "英格蘭", "CRO": "克羅埃西亞", "GHA": "迦納", "PAN": "巴拿馬", "UZB": "烏茲別克", "COL": "哥倫比亞",
+      "_tbd": "待定"
+    },
+    "round": {
+      "groupA": "小組賽 A組", "groupB": "小組賽 B組", "groupC": "小組賽 C組", "groupD": "小組賽 D組",
+      "groupE": "小組賽 E組", "groupF": "小組賽 F組", "groupG": "小組賽 G組", "groupH": "小組賽 H組",
+      "groupI": "小組賽 I組", "groupJ": "小組賽 J組", "groupK": "小組賽 K組", "groupL": "小組賽 L組",
+      "round32": "三十二強賽", "round16": "十六強賽", "quarter": "八強賽", "semifinal": "準決賽",
+      "thirdPlace": "季軍戰", "final": "決賽"
+    },
+    "venue": {
+      "mexicoCity": "墨西哥城體育場", "guadalajara": "瓜達拉哈拉體育場", "toronto": "多倫多體育場",
+      "losAngeles": "洛杉磯體育場", "sanFrancisco": "舊金山灣區體育場", "newYorkNewJersey": "紐約/紐澤西體育場",
+      "boston": "波士頓體育場", "vancouver": "溫哥華卑詩體育館", "houston": "休士頓體育場",
+      "dallas": "達拉斯體育場", "philadelphia": "費城體育場", "monterrey": "蒙特雷體育場",
+      "atlanta": "亞特蘭大體育場", "seattle": "西雅圖體育場", "miami": "邁阿密體育場",
+      "kansasCity": "堪薩斯城體育場"
+    }
+  },
+  "matchDetail": {
+    "connecting": "正在連線到直播…",
+    "promo": {
+      "title": "新用戶優惠",
+      "subtitle": "首次存款享 100% 紅利"
+    },
+    "tabs": {
+      "fulltime": "全場",
+      "firsthalf": "上半場",
+      "corners": "角球",
+      "cards": "牌數",
+      "correct": "比分"
+    },
+    "markets": {
+      "moneyline": "獨贏",
+      "handicap": "讓球",
+      "overUnder": "大小",
+      "oddEven": "單雙"
+    }
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "app": {
+    "title": "World Cup"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "claim": "Claim",
+    "confirm": "Confirm",
+    "deposit": "Deposit",
+    "draw": "Draw",
+    "even": "Even",
+    "inProgress": "In Progress",
+    "kickoff": "Kickoff",
+    "live": "Live",
+    "loading": "Loading…",
+    "currencySymbol": "NT$",
+    "matchId": "Match ID",
+    "round": "Round",
+    "venue": "Venue",
+    "moreOdds": "More Odds",
+    "notStarted": "Not Started",
+    "odd": "Odd",
+    "over": "Over",
+    "placeBet": "Place Bet",
+    "processing": "Processing...",
+    "save": "Save",
+    "single": "Single",
+    "parlay": "Parlay",
+    "stake": "Stake",
+    "status": "Status",
+    "totalOdds": "Total Odds",
+    "potentialPayout": "Potential Payout",
+    "under": "Under",
+    "viewAll": "View All",
+    "vs": "VS",
+    "watch": "Watch",
+    "watchLive": "Watch Live"
+  },
+  "nav": {
+    "home": "Home",
+    "live": "Bet History",
+    "account": "Account",
+    "chat": "Chat"
+  },
+  "home": {
+    "hero": {
+      "tournament": "FIFA World Cup",
+      "hosts": "USA • Mexico • Canada",
+      "liveMatches": "{count} Live Matches",
+      "hotOdds": "Hot Odds"
+    },
+    "liveNow": {
+      "title": "Live Now"
+    },
+    "upcoming": {
+      "title": "Upcoming Matches",
+      "allDates": "All"
+    }
+  },
+  "live": {
+    "title": "Bet History",
+    "subtitle": "Your betting records",
+    "empty": {
+      "title": "No Bet History",
+      "subtitle": "Your bets will appear here"
+    },
+    "status": {
+      "pending": "Pending",
+      "won": "Won",
+      "lost": "Lost"
+    }
+  },
+  "account": {
+    "membership": {
+      "premium": "Premium Member"
+    },
+    "balance": {
+      "available": "Available Balance"
+    },
+    "deposit": {
+      "cta": "Deposit Funds"
+    },
+    "stats": {
+      "totalBets": "Total Bets",
+      "winRate": "Win Rate",
+      "memberSince": "Member Since"
+    },
+    "menu": {
+      "betHistory": "Bet History",
+      "paymentMethods": "Payment Methods",
+      "settings": "Settings",
+      "helpSupport": "Help & Support"
+    },
+    "signOut": "Sign Out",
+    "depositModal": {
+      "title": "Deposit Funds",
+      "amount": "Amount"
+    }
+  },
+  "chat": {
+    "title": "Live Chat",
+    "placeholder": "Type a message...",
+    "you": "You",
+    "close": "Close Chat"
+  },
+  "theme": {
+    "toggleAriaLabel": "Toggle theme"
+  },
+  "betSlip": {
+    "title": "Bet Slip"
+  },
+  "risk": {
+    "low": "Low Risk",
+    "medium": "Medium Risk",
+    "high": "High Risk"
+  },
+  "betConfirm": {
+    "title": "Confirm Bet",
+    "success": {
+      "title": "Bet Placed!",
+      "subtitle": "Good luck with your bet!"
+    },
+    "selectionSummary": "{count} Selection(s) - {mode}"
+  },
+  "match": {
+    "betType": {
+      "fullTimeResult": "Full Time Result"
+    }
+  },
+  "schedule": {
+    "teams": {
+      "MEX": "Mexico", "RSA": "South Africa", "KOR": "South Korea", "CAN": "Canada", "USA": "United States", "PAR": "Paraguay",
+      "QAT": "Qatar", "SUI": "Switzerland", "BRA": "Brazil", "MAR": "Morocco", "HAI": "Haiti", "SCO": "Scotland",
+      "AUS": "Australia", "GER": "Germany", "CUW": "Curaçao", "NED": "Netherlands", "JPN": "Japan", "CIV": "Ivory Coast",
+      "ECU": "Ecuador", "TUN": "Tunisia", "ESP": "Spain", "CPV": "Cape Verde", "BEL": "Belgium", "EGY": "Egypt",
+      "KSA": "Saudi Arabia", "URU": "Uruguay", "IRN": "Iran", "NZL": "New Zealand", "FRA": "France", "SEN": "Senegal",
+      "NOR": "Norway", "ARG": "Argentina", "ALG": "Algeria", "AUT": "Austria", "JOR": "Jordan", "POR": "Portugal",
+      "ENG": "England", "CRO": "Croatia", "GHA": "Ghana", "PAN": "Panama", "UZB": "Uzbekistan", "COL": "Colombia",
+      "_tbd": "TBD"
+    },
+    "round": {
+      "groupA": "Group A", "groupB": "Group B", "groupC": "Group C", "groupD": "Group D",
+      "groupE": "Group E", "groupF": "Group F", "groupG": "Group G", "groupH": "Group H",
+      "groupI": "Group I", "groupJ": "Group J", "groupK": "Group K", "groupL": "Group L",
+      "round32": "Round of 32", "round16": "Round of 16", "quarter": "Quarter-finals", "semifinal": "Semi-finals",
+      "thirdPlace": "Third-place match", "final": "Final"
+    },
+    "venue": {
+      "mexicoCity": "Mexico City Stadium", "guadalajara": "Guadalajara Stadium", "toronto": "Toronto Stadium",
+      "losAngeles": "Los Angeles Stadium", "sanFrancisco": "San Francisco Bay Area Stadium", "newYorkNewJersey": "New York/New Jersey Stadium",
+      "boston": "Boston Stadium", "vancouver": "BC Place Vancouver", "houston": "Houston Stadium",
+      "dallas": "Dallas Stadium", "philadelphia": "Philadelphia Stadium", "monterrey": "Monterrey Stadium",
+      "atlanta": "Atlanta Stadium", "seattle": "Seattle Stadium", "miami": "Miami Stadium",
+      "kansasCity": "Kansas City Stadium"
+    }
+  },
+  "matchDetail": {
+    "connecting": "Connecting to live stream...",
+    "promo": {
+      "title": "New User Promotion",
+      "subtitle": "Get 100% bonus on first deposit"
+    },
+    "tabs": {
+      "fulltime": "Full Time",
+      "firsthalf": "1st Half",
+      "corners": "Corners",
+      "cards": "Cards",
+      "correct": "Score"
+    },
+    "markets": {
+      "moneyline": "Moneyline",
+      "handicap": "Handicap",
+      "overUnder": "Over/Under",
+      "oddEven": "Odd/Even"
+    }
+  }
+}

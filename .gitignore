@@ -1,0 +1,19 @@
+# 專案說明（僅本地參考，不提交）
+PROJECT.md
+
+# Dependencies
+node_modules
+
+# Build
+dist
+
+# Local
+.env
+.env.local
+*.local
+
+# Editor / OS
+.DS_Store
+*.log
+.idea
+.vscode
