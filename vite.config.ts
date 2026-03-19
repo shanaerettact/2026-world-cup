@@ -7,6 +7,15 @@ import { fileURLToPath } from 'url'
 export default defineConfig({
   base: './',
   plugins: [vue(), tailwindcss(), viteSingleFile()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://worldcup.jfshield.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
