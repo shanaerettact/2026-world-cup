@@ -20,12 +20,28 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-instance.interceptors.response.use(
-  (response) => response.data, 
-  (error) => {
-    console.error("API Error:", error.response?.status);
-    return Promise.reject(error);
+function unwrapApiBody(body: unknown) {
+  if (body != null && typeof body === 'object' && 'code' in body) {
+    const { code, msg, data } = body as { code: number; msg?: string; data?: unknown }
+    if (code !== 1) {
+      return Promise.reject(new Error(msg || `code ${code}`))
+    }
+    return data
   }
-);
+  return body
+}
+
+instance.interceptors.response.use(
+  (response) => unwrapApiBody(response.data) as unknown as typeof response,
+  (error) => {
+    const body = error.response?.data
+    if (body != null && typeof body === 'object' && 'code' in body) {
+      const { msg } = body as { msg?: string }
+      return Promise.reject(new Error(msg || 'request failed'))
+    }
+    console.error('API Error:', error.response?.status)
+    return Promise.reject(error)
+  }
+)
 
 export default instance;

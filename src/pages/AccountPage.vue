@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { 
   Wallet, 
-  TrendingUp, 
-  Trophy, 
-  Calendar,
   CreditCard,
   History,
   Settings,
@@ -14,9 +11,11 @@ import {
   ChevronRight,
   Plus
 } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/userStore'
 
 const userStore = useUserStore()
+const { username, formattedBalance } = storeToRefs(userStore)
 const { t } = useI18n()
 const depositAmount = ref(100)
 const showDepositModal = ref(false)
@@ -28,11 +27,6 @@ const menuItems = computed(() => [
   { key: 'helpSupport', icon: HelpCircle, label: t('account.menu.helpSupport') },
 ])
 
-const stats = computed(() => [
-  { key: 'totalBets', label: t('account.stats.totalBets'), value: userStore.totalBets, icon: TrendingUp },
-  { key: 'winRate', label: t('account.stats.winRate'), value: `${userStore.winRate}%`, icon: Trophy },
-  { key: 'memberSince', label: t('account.stats.memberSince'), value: userStore.memberSince, icon: Calendar },
-])
 
 const handleDeposit = () => {
   if (depositAmount.value > 0) {
@@ -40,6 +34,10 @@ const handleDeposit = () => {
     showDepositModal.value = false
   }
 }
+
+onMounted(() => {
+  userStore.fetchUserInfo()
+})
 </script>
 
 <template>
@@ -59,12 +57,11 @@ const handleDeposit = () => {
         <div class="flex items-center gap-4 mb-4">
           <div 
             class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
-            :style="{ backgroundColor: userStore.avatar }"
           >
-            {{ userStore.username.charAt(0).toUpperCase() }}
+            {{ (username).charAt(0).toUpperCase() }}
           </div>
           <div>
-            <h2 class="text-xl font-bold text-white">{{ userStore.username }}</h2>
+            <h2 class="text-xl font-bold text-white">{{ username }}</h2>
             <p class="text-sm text-white/70">{{ $t('account.membership.premium') }}</p>
           </div>
         </div>
@@ -82,7 +79,7 @@ const handleDeposit = () => {
           <div>
             <p class="text-sm text-[var(--color-muted)]">{{ $t('account.balance.available') }}</p>
             <p class="text-2xl font-bold text-[var(--color-text)]">
-              {{ userStore.formattedBalance }}
+              {{ formattedBalance }}
             </p>
           </div>
         </div>
@@ -105,18 +102,6 @@ const handleDeposit = () => {
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid grid-cols-3 gap-3 mb-6">
-      <div
-        v-for="stat in stats"
-        :key="stat.key"
-        class="bg-[var(--color-card)] rounded-xl p-3 text-center
-               border border-[var(--color-border)]"
-      >
-        <component :is="stat.icon" class="w-5 h-5 text-primary mx-auto mb-2" />
-        <p class="text-lg font-bold text-[var(--color-text)]">{{ stat.value }}</p>
-        <p class="text-[10px] text-[var(--color-muted)]">{{ stat.label }}</p>
-      </div>
-    </div>
 
     <!-- Menu -->
     <div class="bg-[var(--color-card)] rounded-2xl overflow-hidden

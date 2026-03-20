@@ -1,15 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { getUserInfo } from '@/services/api/userApi'
 
 export const useUserStore = defineStore('user', () => {
   const balance = ref(8000)
-  const displayBalance = ref(8000)
   const isDepositing = ref(false)
-  const username = ref('JohnDoe')
-  const avatar = ref('#4e80ee')
-  const memberSince = ref('Jan 2024')
-  const totalBets = ref(147)
-  const winRate = ref(62)
+  const username = ref('')
+
+  const userAccount = ref<any>(null)
+  const userId = ref<number>(0)
+  const fetchUserInfo = async () => {
+    try {
+      const res: any = await getUserInfo()
+      const user = res?.user
+      if (user?.id != null) userId.value = Number(user.id)
+      if (user?.account != null) userAccount.value = user.account
+      if (user?.balance != null) {
+        balance.value = Number(user.balance)
+      }
+      if (user?.name != null) username.value = user.name
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const formattedBalance = computed(() => {
     return new Intl.NumberFormat('zh-TW', {
@@ -17,7 +30,7 @@ export const useUserStore = defineStore('user', () => {
       currency: 'TWD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(displayBalance.value)
+    }).format(balance.value)
   })
 
   async function deposit(amount: number) {
@@ -30,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
     balance.value = targetBalance
     
     // Animate balance rolling
-    const startBalance = displayBalance.value
+    const startBalance = balance.value
     const duration = 1000
     const startTime = Date.now()
     
@@ -40,12 +53,12 @@ export const useUserStore = defineStore('user', () => {
       
       // Easing function for smooth animation
       const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-      displayBalance.value = startBalance + (targetBalance - startBalance) * easeOutQuart
+      balance.value = startBalance + (targetBalance - startBalance) * easeOutQuart
       
       if (progress < 1) {
         requestAnimationFrame(animate)
       } else {
-        displayBalance.value = targetBalance
+        balance.value = targetBalance
         isDepositing.value = false
       }
     }
@@ -56,7 +69,6 @@ export const useUserStore = defineStore('user', () => {
   function deductBalance(amount: number) {
     if (balance.value >= amount) {
       balance.value -= amount
-      displayBalance.value = balance.value
       return true
     }
     return false
@@ -64,15 +76,13 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     balance,
-    displayBalance,
     isDepositing,
     username,
-    avatar,
-    memberSince,
-    totalBets,
-    winRate,
+    userId,
+    userAccount,
     formattedBalance,
     deposit,
-    deductBalance
+    deductBalance,
+    fetchUserInfo,
   }
 })
