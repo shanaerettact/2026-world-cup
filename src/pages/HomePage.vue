@@ -4,10 +4,13 @@ import { useI18n } from 'vue-i18n'
 import { Trophy, TrendingUp, Flame } from 'lucide-vue-next'
 import { useMatchStore } from '@/stores/matchStore'
 import FeaturedMatchCard from '@/components/FeaturedMatchCard.vue'
+import { useHomeStore } from '@/stores/homeStore'
+import type { Match } from '@/services/api/matchApi'
+import type { Game, Group } from '@/schema/homeSchema'
 
 const matchStore = useMatchStore()
-const { locale } = useI18n()
-
+const { locale, t } = useI18n()
+const homeStore = useHomeStore()
 const selectedDate = ref<string>('')
 
 const upcomingDates = computed(() => {
@@ -22,6 +25,57 @@ const upcomingDates = computed(() => {
 const filteredUpcomingMatches = computed(() => {
   if (!selectedDate.value) return matchStore.upcomingMatches
   return matchStore.upcomingMatches.filter(m => m.kickoff.slice(0, 10) === selectedDate.value)
+})
+
+function matchToGroup(m: Match): Group {
+  const home = m.homeTeamKey ? t(m.homeTeamKey) : m.homeTeam
+  const away = m.awayTeamKey ? t(m.awayTeamKey) : m.awayTeam
+  const game: Game = {
+    id: String(m.id),
+    status: m.status,
+    number: '',
+    group_id: '',
+    title: `${home} vs ${away}`,
+    content: '',
+    create_time: '',
+    modify_time: '',
+    start_time: m.kickoff,
+    end_time: '',
+    image: '',
+    icon: '',
+    odds: [
+      { id: '0', title: home, odds: String(m.odds.home), draw: '' },
+      { id: '1', title: t('common.draw'), odds: String(m.odds.draw), draw: '' },
+      { id: '2', title: away, odds: String(m.odds.away), draw: '' },
+    ],
+    team1_title: home,
+    team1_score: m.score ? String(m.score.home) : '',
+    team1_result: '',
+    team1_home: '1',
+    team1_icon: m.homeFlag,
+    team1_image: '',
+    team1_content: '',
+    team2_title: away,
+    team2_score: m.score ? String(m.score.away) : '',
+    team2_result: '',
+    team2_home: '0',
+    team2_icon: m.awayFlag,
+    team2_image: '',
+    team2_content: '',
+    top: '',
+  }
+  return {
+    id: `m-${m.id}`,
+    title: '',
+    icon: '',
+    image: '',
+    game: [game],
+  }
+}
+
+const upcomingGroups = computed(() => {
+  void locale.value
+  return filteredUpcomingMatches.value.map(matchToGroup)
 })
 
 watch(upcomingDates, (dates) => {
@@ -76,6 +130,8 @@ function onDateBarMouseDownCapture(e: MouseEvent) {
 
 onMounted(() => {
   matchStore.fetchMatches()
+  homeStore.fetchHomeData()
+  console.log(homeStore.fetchHomeData())
 })
 
 onUnmounted(() => {
@@ -118,7 +174,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Live Now Section -->
-    <section v-if="matchStore.liveMatches.length > 0" class="mb-6">
+    <section v-if="(homeStore.homeData?.group?.length ?? 0) > 0" class="mb-6">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-bold text-[var(--color-text)] flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-danger animate-pulse" />
@@ -133,15 +189,15 @@ onUnmounted(() => {
       </div>
       <div class="space-y-4">
         <FeaturedMatchCard
-          v-for="match in matchStore.liveMatches"
-          :key="match.id"
-          :match="match"
+          v-for="g in homeStore.homeData?.group?.[0]?.game"
+          :key="g.id"
+          :group="{ id: g.id, title: '', icon: '', image: '', game: [g] }"
         />
       </div>
     </section>
 
     <!-- Upcoming Matches -->
-    <section>
+    <section v-if="false">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-bold text-[var(--color-text)]">{{ $t('home.upcoming.title') }}</h2>
       </div>
@@ -193,12 +249,12 @@ onUnmounted(() => {
       <!-- Matches -->
       <div v-else class="space-y-4">
         <FeaturedMatchCard
-          v-for="match in filteredUpcomingMatches"
-          :key="match.id"
-          :match="match"
+          v-for="g in upcomingGroups"
+          :key="g.id"
+          :group="g"
         />
         <p
-          v-if="filteredUpcomingMatches.length === 0"
+          v-if="upcomingGroups.length === 0"
           class="py-8 text-center text-sm text-[var(--color-muted)]"
         >
           {{ selectedDate ? $t('live.empty.subtitle') : $t('live.empty.title') }}

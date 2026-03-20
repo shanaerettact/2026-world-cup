@@ -3,10 +3,12 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Share2, Zap, Gift, MessageCircle } from 'lucide-vue-next'
 import { useMatchStore } from '@/stores/matchStore'
+import { useHomeStore, homeGameToMatch } from '@/stores/homeStore'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 import { useChatStore } from '@/stores/chatStore'
 
 const matchStore = useMatchStore()
+const homeStore = useHomeStore()
 const betSlipStore = useBetSlipStore()
 const chatStore = useChatStore()
 
@@ -22,7 +24,11 @@ const tabs = computed(() => [
   { key: 'correct', label: t('matchDetail.tabs.correct') },
 ])
 
-const match = computed(() => matchStore.selectedMatch)
+const match = computed(
+  () =>
+    matchStore.selectedMatch ??
+    (homeStore.selectedGame ? homeGameToMatch(homeStore.selectedGame) : null)
+)
 const isOpen = computed(() => !!match.value)
 
 const homeTeamName = computed(() =>
@@ -90,11 +96,14 @@ const handleOddsClick = (market: string, type: string, label: string, odds: numb
 
 const closePanel = () => {
   matchStore.clearSelectedMatch()
+  homeStore.clearSelectedGame()
 }
 
 function onPanelAfterEnter() {
-  if (!matchStore.scrollToTabsOnOpen) return
+  const scroll = matchStore.scrollToTabsOnOpen || homeStore.detailScrollToTabs
+  if (!scroll) return
   matchStore.clearScrollToTabsOnOpen()
+  homeStore.clearDetailScrollToTabs()
   nextTick(() => {
     const target = document.querySelector('[data-match-detail-tabs]')
     if (target instanceof HTMLElement) {
@@ -102,6 +111,13 @@ function onPanelAfterEnter() {
     }
   })
 }
+
+watch(
+  () => matchStore.selectedMatch,
+  (m) => {
+    if (m) homeStore.clearSelectedGame()
+  }
+)
 
 // Lock body scroll when open
 watch(isOpen, (open) => {
