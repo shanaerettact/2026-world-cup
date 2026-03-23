@@ -6,6 +6,7 @@ import { useBetSlipStore } from '@/stores/betSlipStore'
 import { useMatchStore } from '@/stores/matchStore'
 import { useHomeStore, gameToFeaturedCardView, type FeaturedCardView } from '@/stores/homeStore'
 import type { Group } from '@/schema/homeSchema'
+import { useSiteGameStore } from '@/stores/siteGameStore'
 
 const props = defineProps<{
   group: Group
@@ -14,6 +15,7 @@ const props = defineProps<{
 const betSlipStore = useBetSlipStore()
 const matchStore = useMatchStore()
 const homeStore = useHomeStore()
+const siteGameStore = useSiteGameStore()
 
 const { t, locale } = useI18n()
 
@@ -93,6 +95,7 @@ const openMatchDetail = (scrollToTabs = false) => {
   if (!v) return
   matchStore.clearSelectedMatch()
   homeStore.selectGame(v.game, { scrollToTabs })
+  siteGameStore.fetchSiteGame(Number(v.game.id))
 }
 </script>
 

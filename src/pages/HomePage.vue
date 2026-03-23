@@ -131,7 +131,6 @@ function onDateBarMouseDownCapture(e: MouseEvent) {
 onMounted(() => {
   matchStore.fetchMatches()
   homeStore.fetchHomeData()
-  console.log(homeStore.fetchHomeData())
 })
 
 onUnmounted(() => {
