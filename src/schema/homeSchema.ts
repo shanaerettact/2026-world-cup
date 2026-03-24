@@ -1,64 +1,66 @@
 import { z } from "zod";
 
+/** API 常回 null，統一轉成空字串 */
+const apiString = z.union([z.string(), z.null()]).transform((v) => v ?? "");
+
 /* ===========================
    賠率
 =========================== */
 export const OddsSchema = z.object({
-  id: z.string(),              // 賠率ID
-  title: z.string(),           // 名稱（南非/巴西/平手）
-  odds: z.string(),            // 賠率
-  // API 可能回 null
-  draw: z.union([z.string(), z.null()]).transform((v) => v ?? ''),
+  id: apiString, // 賠率ID
+  title: apiString, // 名稱（南非/巴西/平手）
+  odds: apiString, // 賠率
+  draw: apiString,
 });
 
 /* ===========================
    比賽
 =========================== */
 export const GameSchema = z.object({
-  id: z.string(),
-  status: z.string(),
-  number: z.string(),
-  group_id: z.string(),
-  title: z.string(),
+  id: apiString,
+  status: apiString,
+  number: apiString,
+  group_id: apiString,
+  title: apiString,
 
-  content: z.string(),
-  create_time: z.string(),
-  modify_time: z.string(),
-  start_time: z.string(),
-  end_time: z.string(),
+  content: apiString,
+  create_time: apiString,
+  modify_time: apiString,
+  start_time: apiString,
+  end_time: apiString,
 
-  image: z.string(),
-  icon: z.string(),
+  image: apiString,
+  icon: apiString,
 
   odds: z.array(OddsSchema),
 
-  team1_title: z.string(),
-  team1_score: z.string(),
-  team1_result: z.string(),
-  team1_home: z.string(),
-  team1_icon: z.string(),
-  team1_image: z.string(),
-  team1_content: z.string(),
+  team1_title: apiString,
+  team1_score: apiString,
+  team1_result: apiString,
+  team1_home: apiString,
+  team1_icon: apiString,
+  team1_image: apiString,
+  team1_content: apiString,
 
-  team2_title: z.string(),
-  team2_score: z.string(),
-  team2_result: z.string(),
-  team2_home: z.string(),
-  team2_icon: z.string(),
-  team2_image: z.string(),
-  team2_content: z.string(),
+  team2_title: apiString,
+  team2_score: apiString,
+  team2_result: apiString,
+  team2_home: apiString,
+  team2_icon: apiString,
+  team2_image: apiString,
+  team2_content: apiString,
 
-  top: z.string(),
+  top: apiString,
 });
 
 /* ===========================
    分組
 =========================== */
 export const GroupSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  icon: z.string(),
-  image: z.string(),
+  id: apiString,
+  title: apiString,
+  icon: apiString,
+  image: apiString,
   game: z.array(GameSchema).optional(), // 有些 group 可能沒有 game
 });
 
@@ -66,10 +68,10 @@ export const GroupSchema = z.object({
    Banner
 =========================== */
 export const BannerSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  image: z.string(),
-  url: z.string(),
+  id: apiString,
+  title: apiString,
+  image: apiString,
+  url: apiString,
 });
 
 /* ===========================
@@ -96,7 +98,7 @@ export const FeaturedCardViewSchema = z.object({
 =========================== */
 export const HomeApiResponseSchema = z.object({
   code: z.number(),
-  msg: z.string(),
+  msg: apiString,
   data: HomeDataSchema,
 });
 

@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 
 export interface BetSelection {
   id: string
+  /** 送 /game/bet 的線別 id（與 id 不同時使用，例如 id 為 slip 複合鍵） */
+  betApiId?: string
   matchId: number
   matchTitle: string
   betType: string

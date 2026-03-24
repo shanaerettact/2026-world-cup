@@ -58,33 +58,43 @@ const formatKickoff = computed(() => {
 const odds = computed(() => {
   const v = view.value
   if (!v) return []
-  const g = v.game
-  return [
-    { key: 'home' as const, label: () => g.team1_title, value: () => v.oddsHome },
-    { key: 'draw' as const, label: () => t('common.draw'), value: () => v.oddsDraw },
-    { key: 'away' as const, label: () => g.team2_title, value: () => v.oddsAway },
-  ]
+  const rows = v.game.odds.map((o) => ({ id: o.id, odds: o.odds, title: o.title }))
+  const draw = rows.find((o) => o.title === '平手')
+  const rest = rows.filter((o) => o.title !== '平手')
+  if (draw && rest.length === 2) {
+    return [rest[0], draw, rest[1]]
+  }
+  return rows
 })
 
-const getSelectionId = (type: string) => `${view.value?.game.id ?? ''}-fulltime-${type}`
+const getSelectionId = (oddId: string) => {
+  const raw = view.value?.game.id
+  if (raw == null || raw === '') return ''
+  return `${Number(raw)}-Moneyline-${oddId}`
+}
 
-const fulltimeTypes = ['home', 'draw', 'away']
-const handleOddsClick = (type: string, label: string, oddsVal: number) => {
+const formatOdds = (s: string) => {
+  const n = Number(s)
+  return Number.isFinite(n) ? n.toFixed(2) : '—'
+}
+
+const handleOddsClick = (oddId: string, odds: string, title: string) => {
   const v = view.value
   if (!v) return
-  const id = getSelectionId(type)
+  const slipId = getSelectionId(oddId)
   const payload = {
-    id,
+    id: slipId,
+    betApiId: oddId,
     matchId: Number(v.game.id),
     matchTitle: matchTitle.value,
     betType: t('match.betType.fullTimeResult'),
-    selection: label,
-    odds: oddsVal,
+    selection: title,
+    odds: Number(odds),
   }
-  if (betSlipStore.isSelected(id)) {
-    betSlipStore.removeSelection(id)
+  if (betSlipStore.isSelected(slipId)) {
+    betSlipStore.removeSelection(slipId)
   } else {
-    for (const ty of fulltimeTypes) betSlipStore.removeSelection(getSelectionId(ty))
+    betSlipStore.removeSelectionsInMarket(Number(v.game.id), 'Moneyline')
     betSlipStore.addSelection(payload)
     betSlipStore.openDrawer()
   }
@@ -97,6 +107,7 @@ const openMatchDetail = (scrollToTabs = false) => {
   homeStore.selectGame(v.game, { scrollToTabs })
   siteGameStore.fetchSiteGame(Number(v.game.id))
 }
+
 </script>
 
 <template>
@@ -176,20 +187,20 @@ const openMatchDetail = (scrollToTabs = false) => {
     <div class="grid grid-cols-3 gap-2 mb-3">
       <button
         v-for="odd in odds"
-        :key="odd.key"
-        @click="handleOddsClick(odd.key, odd.label(), odd.value())"
+        :key="odd.id"
+        @click="handleOddsClick(odd.id, odd.odds, odd.title)"
         class="relative py-3 px-2 rounded-xl font-semibold text-center
                transition-all duration-200 active:scale-95
                border-2"
-        :class="betSlipStore.isSelected(getSelectionId(odd.key))
+        :class="betSlipStore.isSelected(getSelectionId(odd.id))
           ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30'
           : 'bg-[var(--color-bg)] text-[var(--color-text)] border-[var(--color-border)] hover:border-primary/50'"
       >
         <span class="text-[10px] text-[var(--color-muted)] block mb-0.5"
-              :class="betSlipStore.isSelected(getSelectionId(odd.key)) ? 'text-white/70' : ''">
-          {{ odd.label() }}
+              :class="betSlipStore.isSelected(getSelectionId(odd.id)) ? 'text-white/70' : ''">
+          {{ odd.title }}
         </span>
-        <span class="text-lg">{{ odd.value().toFixed(2) }}</span>
+        <span class="text-lg">{{ formatOdds(odd.odds) }}</span>
       </button>
     </div>
 

@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, Check, AlertTriangle, TrendingUp, Shield } from 'lucide-vue-next'
 import { useBetSlipStore } from '@/stores/betSlipStore'
+import { postGameBet } from '@/services/api/gameBetApi'
 
 const betSlipStore = useBetSlipStore()
 const { t, locale } = useI18n()
@@ -48,8 +49,14 @@ const formatCurrency = (value: number) => {
 const handleConfirm = async () => {
   isProcessing.value = true
   
-  // Simulate processing
-  await new Promise(resolve => setTimeout(resolve, 1500))
+  const sel = betSlipStore.selections[0]
+  const payload: any = {
+    id: String(sel.betApiId ?? sel.id),
+    amount: betSlipStore.stake,
+    escape: '1'
+  }
+  console.log(payload)
+  await postGameBet(payload)
   
   isProcessing.value = false
   isConfirmed.value = true

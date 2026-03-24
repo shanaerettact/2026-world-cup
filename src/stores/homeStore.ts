@@ -33,10 +33,11 @@ export function homeGameToMatch(g: Game): Match {
 }
 
 export function gameToFeaturedCardView(g: Game): FeaturedCardView {
+  // 與 homeGameToMatch 一致：[0] 主、[1] 客、[2] 和
   return {
     game: g,
     showScore: g.status === 'live' && !!g.team1_score && !!g.team2_score,
-    oddsHome: Number(g.odds?.[1]?.odds ?? 0),
+    oddsHome: Number(g.odds?.[0]?.odds ?? 0),
     oddsDraw: Number(g.odds?.[2]?.odds ?? 0),
     oddsAway: Number(g.odds?.[1]?.odds ?? 0),
   }
