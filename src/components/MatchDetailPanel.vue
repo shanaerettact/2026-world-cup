@@ -15,8 +15,6 @@ const chatStore = useChatStore()
 const siteGameStore = useSiteGameStore() 
 const { t } = useI18n()
 
-const activeTab = ref('1')
-
 const tabs = computed(() => 
   siteGameStore.siteGame?.list.map(item => ({
     key: item.id,
@@ -24,6 +22,11 @@ const tabs = computed(() =>
     item: item.item,
   }))
 )
+
+const activeTab = ref('')
+
+/** 各 tab 位置對應的實際 key */
+const tabKeyAt = (index: number) => tabs.value?.[index]?.key ?? ''
 
 const match = computed(
   () =>{
@@ -149,6 +152,20 @@ function onTabClick(key: string) {
   activeTab.value = key
 }
 
+function resetActiveTabToFirst() {
+  const list = tabs.value
+  if (list?.length) {
+    activeTab.value = list[0].key
+  }
+}
+
+watch(tabs, (list) => {
+  if (!list?.length) return
+  if (!activeTab.value || !list.some((t) => t.key === activeTab.value)) {
+    activeTab.value = list[0].key
+  }
+})
+
 watch(
   () => matchStore.selectedMatch,
   (m) => {
@@ -158,11 +175,11 @@ watch(
 
 watch(isOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  if (open) resetActiveTabToFirst()
 })
 onMounted(() => {
   if (!match.value?.id) return
   siteGameStore.fetchSiteGame(match.value.id)
-  console.log('siteGameStore.siteGame', siteGameStore.siteGame)
 })
 </script>
 
@@ -290,7 +307,7 @@ onMounted(() => {
           <div class="mt-4 mx-4 mb-6">
             <!-- Moneyline -->
             <template v-for="item in siteGameStore.siteGame?.list?.[0]?.item" :key="item.id">
-              <div v-if="activeTab === '1'" class="mb-4">
+              <div v-if="activeTab === tabKeyAt(0)" class="mb-4">
                 <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t(item.title) }}</h3>
                 <div 
                 class="grid grid-cols-3 gap-2">
@@ -346,7 +363,7 @@ onMounted(() => {
 
             <!-- Handicap -->
             <template v-for="item in siteGameStore.siteGame?.list?.[1]?.item" :key="item.id">
-              <div v-if="activeTab === '2'" class="mb-4">
+              <div v-if="activeTab === tabKeyAt(1)" class="mb-4">
                   <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t(item.title) }}</h3>
                 <div class="grid grid-cols-2 gap-2">
                   <button
@@ -384,7 +401,7 @@ onMounted(() => {
             </template>
 
             <!-- Over/Under -->
-              <div v-if="activeTab === '3'" class="mb-4">
+              <div v-if="activeTab === tabKeyAt(2)" class="mb-4">
                 <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t(siteGameStore.siteGame?.list?.[2]?.item?.[0]?.title ?? '') }}</h3> 
                 <div class="grid grid-cols-3 gap-2">
                   <template v-for="item in siteGameStore.siteGame?.list?.[2]?.item?.[0]?.item" :key="item.id">
@@ -408,7 +425,7 @@ onMounted(() => {
               </div>
 
             <!-- Odd/Even -->
-            <div v-if="activeTab === '4' && match.markets">
+            <div v-if="activeTab === tabKeyAt(3) && match.markets">
               <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t('matchDetail.markets.oddEven') }}</h3>
               <div class="grid grid-cols-2 gap-2">
                 <button
