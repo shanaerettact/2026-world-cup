@@ -99,13 +99,6 @@ function playItemOddsNumber(odds: string | undefined): number {
   return Number.isFinite(n) ? n : 0
 }
 
-const marketTypes: Record<string, string[]> = {
-  Moneyline: ['home', 'draw', 'away'],
-  Handicap: ['home', 'away'],
-  'O/U': ['over', 'under'],
-  OddEven: ['odd', 'even']
-}
-
 const marketLabel = (market: string) => {
   switch (market) {
     case 'Moneyline': return t('matchDetail.markets.moneyline')
@@ -130,8 +123,6 @@ const handleOddsClick = (market: string, type: string, label: string, odds: numb
   if (betSlipStore.isSelected(id)) {
     betSlipStore.removeSelection(id)
   } else {
-    const types = marketTypes[market]
-    if (types) for (const ty of types) betSlipStore.removeSelection(getSelectionId(market, ty))
     betSlipStore.addSelection(payload)
   }
 }

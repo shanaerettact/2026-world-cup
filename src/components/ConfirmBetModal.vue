@@ -133,7 +133,7 @@ watch(() => betSlipStore.isConfirmModalOpen, (open) => {
               <!-- Selections Summary -->
               <div class="p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]">
                 <p class="text-xs text-[var(--color-muted)] mb-2">
-                  {{ $t('betConfirm.selectionSummary', { count: betSlipStore.selectionCount, mode: betSlipStore.betMode === 'parlay' ? $t('common.parlay') : $t('common.single') }) }}
+                  {{ $t('betConfirm.selectionSummary', { count: betSlipStore.selectionCount, mode: $t('common.single') }) }}
                 </p>
                 <div class="space-y-2 max-h-32 overflow-y-auto">
                   <div

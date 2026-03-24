@@ -37,17 +37,14 @@ const MOCK_BET_HISTORY: BetRecord[] = [
 export const useBetSlipStore = defineStore('betSlip', () => {
   const selections = ref<BetSelection[]>([])
   const betHistory = ref<BetRecord[]>([...MOCK_BET_HISTORY])
-  const stake = ref<number>(10)
+  const stake = ref<number>(100)
   const betMode = ref<BetMode>('single')
   const isDrawerOpen = ref(false)
   const isConfirmModalOpen = ref(false)
 
   const totalOdds = computed(() => {
     if (selections.value.length === 0) return 0
-    if (betMode.value === 'single') {
-      return selections.value[0]?.odds || 0
-    }
-    return selections.value.reduce((acc, sel) => acc * sel.odds, 1)
+    return selections.value[0]?.odds || 0
   })
 
   const potentialPayout = computed(() => {
@@ -62,13 +59,13 @@ export const useBetSlipStore = defineStore('betSlip', () => {
 
   const selectionCount = computed(() => selections.value.length)
 
+  /** 投注單只保留一筆：新選項會取代既有選項 */
   function addSelection(selection: BetSelection) {
-    const exists = selections.value.find(s => s.id === selection.id)
-    if (!exists) {
-      selections.value.push(selection)
-      if (!isDrawerOpen.value) {
-        isDrawerOpen.value = true
-      }
+    const exists = selections.value.some((s) => s.id === selection.id)
+    if (exists) return
+    selections.value = [selection]
+    if (!isDrawerOpen.value) {
+      isDrawerOpen.value = true
     }
   }
 
@@ -136,7 +133,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     const record: BetRecord = {
       id: `bet-${Date.now()}`,
       matchTitle: selections.value.map(s => s.matchTitle).join(' + ') || '-',
-      betType: betMode.value === 'parlay' ? 'parlay' : (selections.value[0]?.betType ?? ''),
+      betType: selections.value[0]?.betType ?? '',
       selection: selections.value.map(s => s.selection).join(' / ') || '-',
       odds: totalOdds.value,
       stake: stake.value,

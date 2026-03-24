@@ -72,7 +72,7 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
         class="fixed bottom-0 left-0 right-0 z-[60] max-w-[430px] mx-auto"
       >
         <div class="bg-[var(--color-card)] rounded-t-3xl shadow-2xl shadow-black/20
-                    max-h-[80vh] flex flex-col">
+                    max-h-[100vh] flex flex-col">
           <!-- Handle -->
           <div class="flex justify-center pt-3 pb-2">
             <div class="w-10 h-1 rounded-full bg-[var(--color-border)]" />
@@ -102,37 +102,12 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
             </div>
           </div>
 
-          <!-- Bet Mode Tabs -->
-          <div class="px-4 py-3">
-            <div class="flex gap-2 p-1 rounded-xl bg-[var(--color-bg)]">
-              <button
-                @click="betSlipStore.setBetMode('single')"
-                class="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                :class="betSlipStore.betMode === 'single'
-                  ? 'bg-[var(--color-card)] text-[var(--color-text)] shadow-sm'
-                  : 'text-[var(--color-muted)]'"
-              >
-                {{ $t('common.single') }}
-              </button>
-              <button
-                @click="betSlipStore.setBetMode('parlay')"
-                class="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                :class="betSlipStore.betMode === 'parlay'
-                  ? 'bg-[var(--color-card)] text-[var(--color-text)] shadow-sm'
-                  : 'text-[var(--color-muted)]'"
-              >
-                {{ $t('common.parlay') }}
-              </button>
-            </div>
-          </div>
-
           <!-- Selections -->
-          <div class="flex-1 overflow-y-auto px-4 space-y-3 max-h-[30vh]">
+          <div class="flex-1 px-4 space-y-3">
             <div
               v-for="selection in betSlipStore.selections"
               :key="selection.id"
-              class="p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]
-                     relative group"
+              class="p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] relative group"
             >
               <button
                 @click="betSlipStore.removeSelection(selection.id)"
@@ -152,7 +127,7 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
           </div>
 
           <!-- Summary -->
-          <div class="p-4 border-t border-[var(--color-border)] space-y-3">
+          <div class="p-4 space-y-3">
             <!-- Risk Level -->
             <div 
               class="flex items-center gap-2 p-2 rounded-xl border"

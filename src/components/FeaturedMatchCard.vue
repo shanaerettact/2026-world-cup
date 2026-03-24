@@ -94,7 +94,6 @@ const handleOddsClick = (oddId: string, odds: string, title: string) => {
   if (betSlipStore.isSelected(slipId)) {
     betSlipStore.removeSelection(slipId)
   } else {
-    betSlipStore.removeSelectionsInMarket(Number(v.game.id), 'Moneyline')
     betSlipStore.addSelection(payload)
     betSlipStore.openDrawer()
   }
