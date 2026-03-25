@@ -4,12 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { Trophy, TrendingUp, Flame, LayoutGrid } from 'lucide-vue-next'
 import { useMatchStore } from '@/stores/matchStore'
 import FeaturedMatchCard from '@/components/FeaturedMatchCard.vue'
-import BettingOptionsModal from '@/components/BettingOptionsModal.vue'
 import { useHomeStore } from '@/stores/homeStore'
+import { useBettingModalStore } from '@/stores/bettingModalStore'
 import type { Match } from '@/services/api/matchApi'
 import type { Game, Group } from '@/schema/homeSchema'
 
-const bettingModalOpen = ref(false)
+const bettingModalStore = useBettingModalStore()
 
 const matchStore = useMatchStore()
 const { locale, t } = useI18n()
@@ -174,7 +174,7 @@ onUnmounted(() => {
 
           <!-- 3D Floating Markets Button -->
           <button
-            @click="bettingModalOpen = true"
+            @click="bettingModalStore.open()"
             class="markets-fab flex items-center gap-2 px-3 py-1.5 rounded-full
                    text-xs font-semibold text-white
                    transition-all duration-200 active:scale-95 select-none"
@@ -186,12 +186,6 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
-
-    <!-- Betting Options Modal -->
-    <BettingOptionsModal
-      :open="bettingModalOpen"
-      @close="bettingModalOpen = false"
-    />
 
     <!-- Live Now Section -->
     <section v-if="(homeStore.homeData?.group?.length ?? 0) > 0" class="mb-6">

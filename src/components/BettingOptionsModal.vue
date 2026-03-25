@@ -1,120 +1,129 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { X, TrendingUp, Star, Zap, Target, ChevronRight, ArrowUpRight } from 'lucide-vue-next'
+import { useBettingModalStore } from '@/stores/bettingModalStore'
 
-const props = defineProps<{
-  open: boolean
-}>()
+const store = useBettingModalStore()
+const placingBetId = ref<string | null>(null)
 
-const emit = defineEmits<{
-  close: []
-}>()
-
-const placingBetSection = ref<string | null>(null)
-
-const bettingSections = [
+const sections = [
   {
     id: 'moneyline',
     icon: TrendingUp,
-    accentColor: '#4e80ee',
-    accentFrom: '#1e40af',
-    accentTo: '#6aa1ff',
+    gradFrom: '#1e3a8a',
+    gradTo: '#3b82f6',
+    glowColor: 'rgba(78,128,238,0.45)',
+    accentHex: '#4e80ee',
     badge: 'Most Popular',
-    badgeColor: 'bg-primary/20 text-primary',
-    title: 'Moneyline Betting',
+    title: 'Moneyline',
     subtitle: 'Pick the outright winner',
     description:
-      'Moneyline betting is the simplest form of sports wagering. You select which team will win the match outright. No spreads, no handicaps — just pick the winner. Odds reflect each team\'s probability of winning, so favorites offer lower returns while underdogs carry higher payouts.',
+      'The simplest form of wagering — select which side wins the match. No spreads or handicaps. Odds reflect probability: favorites return less, underdogs return more. Ideal for beginners and for markets where one team is clearly stronger.',
     options: [
-      { label: 'Home Win', odds: '2.10', hint: 'Team playing at home ground' },
-      { label: 'Draw', odds: '3.40', hint: 'Match ends level after 90 mins' },
-      { label: 'Away Win', odds: '3.75', hint: 'Visiting team secures victory' },
+      { key: 'hw', label: 'Home Win',  odds: '2.10', hint: 'Home team wins in 90 min' },
+      { key: 'dr', label: 'Draw',      odds: '3.40', hint: 'Level after full time' },
+      { key: 'aw', label: 'Away Win',  odds: '3.75', hint: 'Visiting team wins' },
     ],
   },
   {
     id: 'handicap',
     icon: Target,
-    accentColor: '#f59e0b',
-    accentFrom: '#b45309',
-    accentTo: '#fbbf24',
+    gradFrom: '#78350f',
+    gradTo: '#f59e0b',
+    glowColor: 'rgba(245,158,11,0.45)',
+    accentHex: '#f59e0b',
     badge: 'Value Bet',
-    badgeColor: 'bg-warning/20 text-warning',
     title: 'Asian Handicap',
     subtitle: 'Level the playing field',
     description:
-      'Asian Handicap removes the draw outcome by giving one side a virtual head-start. A -1.5 handicap means the favored team must win by 2 or more goals for that bet to win. This market offers sharper lines and often better value compared to traditional 1X2 markets.',
+      'Eliminates the draw by giving one team a virtual head-start. A −1.5 handicap on the favorite means they must win by 2+ goals. Sharper lines and often better value than traditional 1X2 markets — popular with experienced bettors.',
     options: [
-      { label: '-1.5 (Home)', odds: '1.85', hint: 'Home wins by 2+ goals' },
-      { label: '+1.5 (Away)', odds: '1.95', hint: 'Away loses by 1 or wins' },
+      { key: 'ah1', label: 'Home −1.5', odds: '1.85', hint: 'Home wins by 2 or more goals' },
+      { key: 'ah2', label: 'Away +1.5', odds: '1.95', hint: 'Away loses by 1 or wins' },
     ],
   },
   {
     id: 'overunder',
     icon: Zap,
-    accentColor: '#10b981',
-    accentFrom: '#065f46',
-    accentTo: '#34d399',
+    gradFrom: '#064e3b',
+    gradTo: '#10b981',
+    glowColor: 'rgba(16,185,129,0.45)',
+    accentHex: '#10b981',
     badge: 'High Action',
-    badgeColor: 'bg-success/20 text-success',
-    title: 'Over / Under Goals',
-    subtitle: 'Bet on total goals scored',
+    title: 'Over / Under',
+    subtitle: 'Total goals scored',
     description:
-      'Rather than predicting who wins, you wager on the total number of goals scored by both teams combined. If the line is 2.5, an Over bet wins if 3 or more goals are scored. Under wins if there are 2 or fewer. A great option when you have a strong read on game pace but are unsure of the winner.',
+      'Wager on the combined number of goals by both teams. If the line is 2.5, Over wins with 3+ goals, Under wins with 2 or fewer. Great when you have conviction on game pace but are uncertain of the winner.',
     options: [
-      { label: 'Over 2.5', odds: '1.72', hint: '3 or more total goals' },
-      { label: 'Under 2.5', odds: '2.05', hint: '2 or fewer total goals' },
-      { label: 'Over 3.5', odds: '2.90', hint: '4 or more total goals' },
+      { key: 'o25', label: 'Over 2.5',  odds: '1.72', hint: '3 or more total goals' },
+      { key: 'u25', label: 'Under 2.5', odds: '2.05', hint: '2 or fewer total goals' },
+      { key: 'o35', label: 'Over 3.5',  odds: '2.90', hint: '4 or more total goals' },
     ],
   },
   {
-    id: 'bothscore',
+    id: 'btts',
     icon: Star,
-    accentColor: '#ef4444',
-    accentFrom: '#7f1d1d',
-    accentTo: '#f87171',
+    gradFrom: '#7f1d1d',
+    gradTo: '#ef4444',
+    glowColor: 'rgba(239,68,68,0.45)',
+    accentHex: '#ef4444',
     badge: 'Fan Favorite',
-    badgeColor: 'bg-danger/20 text-danger',
     title: 'Both Teams to Score',
     subtitle: 'Will both sides find the net?',
     description:
-      'Predict whether both teams will score at least one goal during the match. This market doesn\'t care about who wins — only whether each side manages to put the ball in the net. BTTS Yes is popular in high-scoring leagues while BTTS No suits tight defensive battles.',
+      "Predict whether each side scores at least one goal. The final result doesn't matter — only whether both nets are broken. BTTS Yes thrives in high-scoring matchups; BTTS No suits tight, defensive encounters.",
     options: [
-      { label: 'BTTS — Yes', odds: '1.65', hint: 'Both teams score 1+ goals' },
-      { label: 'BTTS — No', odds: '2.15', hint: 'At least one team kept clean' },
+      { key: 'btts_y', label: 'BTTS — Yes', odds: '1.65', hint: 'Both teams score 1+ goals' },
+      { key: 'btts_n', label: 'BTTS — No',  odds: '2.15', hint: 'At least one clean sheet kept' },
     ],
   },
   {
     id: 'firstgoal',
     icon: ArrowUpRight,
-    accentColor: '#8b5cf6',
-    accentFrom: '#4c1d95',
-    accentTo: '#a78bfa',
+    gradFrom: '#3b0764',
+    gradTo: '#8b5cf6',
+    glowColor: 'rgba(139,92,246,0.45)',
+    accentHex: '#8b5cf6',
     badge: 'Quick Win',
-    badgeColor: 'bg-violet-500/20 text-violet-400',
     title: 'First Goal Scorer',
     subtitle: 'Name the opening goal hero',
     description:
-      'Predict which player will score the first goal of the match. Odds are typically generous since there are many possible scorers. It\'s a high-variance bet with significant upside — a single goal from the right player can multiply your stake many times over.',
+      'Predict which player will score first. Odds are generous given the many possible scorers. High variance with significant upside — a single goal from the right player can multiply your stake many times over.',
     options: [
-      { label: 'Striker A', odds: '5.50', hint: 'Top scorer this season' },
-      { label: 'Midfielder B', odds: '8.00', hint: 'Known for long-range efforts' },
-      { label: 'No Goal', odds: '12.00', hint: 'Match ends goalless' },
+      { key: 'fgs_a', label: 'Striker A',   odds: '5.50',  hint: 'Top scorer this season' },
+      { key: 'fgs_b', label: 'Midfielder B', odds: '8.00',  hint: 'Known for long-range efforts' },
+      { key: 'fgs_ng', label: 'No Goal',    odds: '12.00', hint: 'Match ends goalless' },
+    ],
+  },
+  {
+    id: 'corners',
+    icon: TrendingUp,
+    gradFrom: '#1e3a5f',
+    gradTo: '#0ea5e9',
+    glowColor: 'rgba(14,165,233,0.45)',
+    accentHex: '#0ea5e9',
+    badge: 'Specialist',
+    title: 'Corner Betting',
+    subtitle: 'Wager on set-piece volume',
+    description:
+      'Bet on the total number of corners, which team wins more corners, or exact corner count intervals. A specialist market that rewards tactical knowledge — teams that dominate possession typically generate more corners.',
+    options: [
+      { key: 'co9',   label: 'Over 9.5 Corners',  odds: '1.80', hint: '10 or more corners total' },
+      { key: 'cu9',   label: 'Under 9.5 Corners', odds: '1.95', hint: '9 or fewer corners total' },
+      { key: 'cmost', label: 'Home Most Corners',  odds: '2.20', hint: 'Home team wins corner count' },
     ],
   },
 ]
 
-const handlePlaceBet = (sectionId: string, optionLabel: string) => {
-  placingBetSection.value = `${sectionId}-${optionLabel}`
-  setTimeout(() => {
-    placingBetSection.value = null
-  }, 1500)
+function handlePlaceBet(sectionId: string, key: string) {
+  const id = `${sectionId}-${key}`
+  placingBetId.value = id
+  setTimeout(() => { placingBetId.value = null }, 1400)
 }
 
 watch(
-  () => props.open,
-  (open) => {
-    document.body.style.overflow = open ? 'hidden' : ''
-  }
+  () => store.isOpen,
+  (open) => { document.body.style.overflow = open ? 'hidden' : '' },
 )
 </script>
 
@@ -123,156 +132,181 @@ watch(
     <!-- Backdrop -->
     <Transition name="bom-fade">
       <div
-        v-if="open"
-        class="fixed inset-0 z-[70] bg-black/75 backdrop-blur-md"
-        @click.self="emit('close')"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Betting Options"
+        v-if="store.isOpen"
+        class="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm"
+        @click.self="store.close()"
+        aria-hidden="true"
       />
     </Transition>
 
-    <!-- Modal Sheet -->
+    <!-- Sheet -->
     <Transition name="bom-slide">
       <div
-        v-if="open"
-        class="fixed inset-x-0 bottom-0 z-[70] max-w-[430px] mx-auto
-               flex flex-col max-h-[92dvh]"
+        v-if="store.isOpen"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Betting Markets"
+        class="fixed inset-x-0 bottom-0 z-[70] max-w-[430px] mx-auto flex flex-col max-h-[92dvh]"
       >
-        <!-- Glassy container -->
-        <div class="flex flex-col rounded-t-3xl overflow-hidden
-                    bg-[var(--color-card)] shadow-2xl shadow-black/40
-                    border-t border-x border-[var(--color-border)]">
-
-          <!-- Handle bar -->
+        <div
+          class="flex flex-col rounded-t-3xl overflow-hidden shadow-2xl shadow-black/60
+                 border-t border-x border-[var(--color-border)]"
+          style="background: var(--color-card)"
+        >
+          <!-- Pull handle -->
           <div class="shrink-0 flex justify-center pt-3 pb-1">
             <div class="w-10 h-1 rounded-full bg-[var(--color-border)]" />
           </div>
 
           <!-- Header -->
-          <div class="shrink-0 flex items-center justify-between px-5 py-3
-                      border-b border-[var(--color-border)]">
+          <div
+            class="shrink-0 flex items-center justify-between px-5 py-3
+                   border-b border-[var(--color-border)]"
+          >
             <div>
               <h2 class="text-lg font-bold text-[var(--color-text)] leading-tight">
                 Betting Markets
               </h2>
               <p class="text-xs text-[var(--color-muted)] mt-0.5">
-                {{ bettingSections.length }} markets available
+                {{ sections.length }} markets available · World Cup 2026
               </p>
             </div>
             <button
-              @click="emit('close')"
+              @click="store.close()"
               class="w-9 h-9 rounded-xl flex items-center justify-center
                      bg-[var(--color-bg)] border border-[var(--color-border)]
                      text-[var(--color-muted)] hover:text-[var(--color-text)]
                      transition-all active:scale-90"
-              aria-label="Close modal"
+              aria-label="Close betting markets"
             >
               <X class="w-4 h-4" />
             </button>
           </div>
 
-          <!-- Scrollable sections -->
-          <div class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-5">
+          <!-- Scrollable body -->
+          <div class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-4">
+            <!-- Section card -->
             <article
-              v-for="section in bettingSections"
+              v-for="section in sections"
               :key="section.id"
-              class="rounded-2xl overflow-hidden border border-[var(--color-border)]
-                     bg-[var(--color-bg)] shadow-sm"
+              class="rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-sm"
+              style="background: var(--color-bg)"
             >
               <!-- Banner -->
               <div
                 class="relative px-4 py-5 overflow-hidden"
-                :style="`background: linear-gradient(135deg, ${section.accentFrom}cc, ${section.accentTo}99)`"
+                :style="`background: linear-gradient(135deg, ${section.gradFrom} 0%, ${section.gradTo} 100%)`"
               >
-                <!-- Decorative orbs -->
+                <!-- Orb decorations -->
                 <div
-                  class="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-20 blur-2xl"
-                  :style="`background: ${section.accentColor}`"
+                  class="absolute -top-10 -right-10 w-36 h-36 rounded-full blur-3xl opacity-25 pointer-events-none"
+                  :style="`background: ${section.accentHex}`"
                 />
                 <div
-                  class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full opacity-15 blur-xl"
-                  :style="`background: ${section.accentColor}`"
+                  class="absolute -bottom-8 -left-8 w-28 h-28 rounded-full blur-2xl opacity-20 pointer-events-none"
+                  :style="`background: ${section.accentHex}`"
                 />
 
                 <div class="relative z-10 flex items-start justify-between gap-3">
                   <div class="flex items-center gap-3">
-                    <!-- Icon sphere -->
+                    <!-- 3-D icon sphere -->
                     <div
-                      class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0
-                             bg-white/15 backdrop-blur-sm border border-white/20
-                             shadow-lg"
-                      :style="`box-shadow: 0 4px 20px ${section.accentColor}50`"
+                      class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0
+                             border border-white/20"
+                      style="background: rgba(255,255,255,0.12); backdrop-filter: blur(8px)"
+                      :style="`box-shadow: 0 0px 0 1px rgba(255,255,255,0.08) inset,
+                                           0 6px 20px ${section.glowColor}`"
                     >
                       <component :is="section.icon" class="w-5 h-5 text-white" />
                     </div>
+
                     <div>
+                      <!-- Badge -->
                       <span
-                        class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold
-                               uppercase tracking-wider mb-1"
-                        :class="section.badgeColor"
-                        style="backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.2); color: white"
+                        class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold
+                               uppercase tracking-widest mb-1 text-white/90"
+                        style="background: rgba(0,0,0,0.25); backdrop-filter: blur(4px)"
                       >
                         {{ section.badge }}
                       </span>
                       <h3 class="text-base font-bold text-white leading-tight">{{ section.title }}</h3>
-                      <p class="text-xs text-white/70 mt-0.5">{{ section.subtitle }}</p>
+                      <p class="text-xs text-white/65 mt-0.5">{{ section.subtitle }}</p>
                     </div>
                   </div>
-                  <ChevronRight class="w-4 h-4 text-white/50 mt-3 shrink-0" />
+
+                  <ChevronRight class="w-4 h-4 text-white/40 mt-3 shrink-0" />
                 </div>
               </div>
 
               <!-- Body -->
               <div class="p-4">
                 <!-- Description -->
-                <p class="text-xs text-[var(--color-muted)] leading-relaxed mb-4">
+                <p class="text-xs leading-relaxed text-[var(--color-muted)] mb-4">
                   {{ section.description }}
                 </p>
 
-                <!-- Odds Options -->
+                <!-- Odds rows -->
                 <div class="space-y-2 mb-4">
                   <div
                     v-for="option in section.options"
-                    :key="option.label"
-                    class="flex items-center justify-between gap-3
-                           px-3 py-2.5 rounded-xl
-                           bg-[var(--color-card)] border border-[var(--color-border)]"
+                    :key="option.key"
+                    class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl
+                           border border-[var(--color-border)]"
+                    style="background: var(--color-card)"
                   >
                     <div class="min-w-0">
-                      <p class="text-sm font-semibold text-[var(--color-text)] truncate">{{ option.label }}</p>
-                      <p class="text-[10px] text-[var(--color-muted)] truncate">{{ option.hint }}</p>
+                      <p class="text-sm font-semibold text-[var(--color-text)] truncate">
+                        {{ option.label }}
+                      </p>
+                      <p class="text-[10px] text-[var(--color-muted)] truncate">
+                        {{ option.hint }}
+                      </p>
                     </div>
-                    <span
-                      class="shrink-0 text-base font-bold px-3 py-1 rounded-lg
-                             bg-[var(--color-bg)] border border-[var(--color-border)]"
-                      :style="`color: ${section.accentColor}`"
+                    <button
+                      @click="handlePlaceBet(section.id, option.key)"
+                      class="shrink-0 text-sm font-bold px-3 py-1.5 rounded-lg
+                             border border-[var(--color-border)] transition-all active:scale-95"
+                      style="background: var(--color-bg)"
+                      :style="`color: ${section.accentHex}`"
                     >
-                      {{ option.odds }}
-                    </span>
+                      <Transition name="bom-fade" mode="out-in">
+                        <span
+                          v-if="placingBetId === `${section.id}-${option.key}`"
+                          key="adding"
+                          class="flex items-center gap-1"
+                        >
+                          <span
+                            class="w-3 h-3 border-2 border-current/30 border-t-current
+                                   rounded-full animate-spin"
+                          />
+                          Added
+                        </span>
+                        <span v-else key="odds">{{ option.odds }}</span>
+                      </Transition>
+                    </button>
                   </div>
                 </div>
 
-                <!-- Place Bet CTA -->
+                <!-- Primary CTA -->
                 <button
-                  @click="handlePlaceBet(section.id, 'quick')"
+                  @click="handlePlaceBet(section.id, 'cta')"
                   class="w-full py-3 rounded-xl font-bold text-sm text-white
-                         transition-all duration-200 active:scale-[0.97]
-                         flex items-center justify-center gap-2 relative overflow-hidden"
-                  :style="`background: linear-gradient(135deg, ${section.accentFrom}, ${section.accentTo});
-                           box-shadow: 0 4px 20px ${section.accentColor}40`"
+                         transition-all duration-200 active:scale-[0.97] flex items-center
+                         justify-center gap-2 overflow-hidden"
+                  :style="`background: linear-gradient(135deg, ${section.gradFrom}, ${section.gradTo});
+                           box-shadow: 0 4px 20px ${section.glowColor}`"
                 >
                   <Transition name="bom-fade" mode="out-in">
                     <span
-                      v-if="placingBetSection === `${section.id}-quick`"
-                      key="done"
+                      v-if="placingBetId === `${section.id}-cta`"
+                      key="placing"
                       class="flex items-center gap-2"
                     >
-                      <span class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Placing Bet...
                     </span>
                     <span v-else key="cta" class="flex items-center gap-2">
-                      Place Bet on {{ section.title }}
+                      Place Bet — {{ section.title }}
                       <ChevronRight class="w-4 h-4" />
                     </span>
                   </Transition>
@@ -280,7 +314,7 @@ watch(
               </div>
             </article>
 
-            <!-- Bottom spacing for safe area -->
+            <!-- Safe-area spacer -->
             <div class="h-4" />
           </div>
         </div>
@@ -290,19 +324,13 @@ watch(
 </template>
 
 <style scoped>
-/* Backdrop fade */
 .bom-fade-enter-active,
-.bom-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
+.bom-fade-leave-active { transition: opacity 0.25s ease; }
 .bom-fade-enter-from,
-.bom-fade-leave-to {
-  opacity: 0;
-}
+.bom-fade-leave-to     { opacity: 0; }
 
-/* Modal slide-up */
 .bom-slide-enter-active {
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.25s ease;
 }
 .bom-slide-leave-active {
   transition: transform 0.25s ease, opacity 0.2s ease;
