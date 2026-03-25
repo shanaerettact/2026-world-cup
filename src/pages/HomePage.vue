@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Trophy, TrendingUp, Flame, LayoutGrid } from 'lucide-vue-next'
+import { Trophy, TrendingUp, Flame } from 'lucide-vue-next'
 import { useMatchStore } from '@/stores/matchStore'
 import FeaturedMatchCard from '@/components/FeaturedMatchCard.vue'
 import { useHomeStore } from '@/stores/homeStore'
-import { useBettingModalStore } from '@/stores/bettingModalStore'
 import type { Match } from '@/services/api/matchApi'
 import type { Game, Group } from '@/schema/homeSchema'
-
-const bettingModalStore = useBettingModalStore()
 
 const matchStore = useMatchStore()
 const { locale, t } = useI18n()
@@ -171,18 +168,6 @@ onUnmounted(() => {
             <TrendingUp class="w-4 h-4 text-success" />
             <span class="text-xs font-medium text-white">{{ $t('home.hero.hotOdds') }}</span>
           </div>
-
-          <!-- 3D Floating Markets Button -->
-          <button
-            @click="bettingModalStore.open()"
-            class="markets-fab flex items-center gap-2 px-3 py-1.5 rounded-full
-                   text-xs font-semibold text-white
-                   transition-all duration-200 active:scale-95 select-none"
-            aria-label="Open Betting Markets"
-          >
-            <LayoutGrid class="w-4 h-4 text-amber-300 shrink-0" />
-            <span>All Markets</span>
-          </button>
         </div>
       </div>
     </div>
