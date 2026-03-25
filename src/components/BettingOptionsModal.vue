@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { X, TrendingUp, Star, Zap, Target, ChevronRight, ArrowUpRight } from 'lucide-vue-next'
 import { useBettingModalStore } from '@/stores/bettingModalStore'
 
+const { t } = useI18n()
 const store = useBettingModalStore()
 const placingBetId = ref<string | null>(null)
 
-const sections = [
+const sectionDefs = [
   {
     id: 'moneyline',
     icon: TrendingUp,
@@ -14,15 +16,10 @@ const sections = [
     gradTo: '#3b82f6',
     glowColor: 'rgba(78,128,238,0.45)',
     accentHex: '#4e80ee',
-    badge: 'Most Popular',
-    title: 'Moneyline',
-    subtitle: 'Pick the outright winner',
-    description:
-      'The simplest form of wagering — select which side wins the match. No spreads or handicaps. Odds reflect probability: favorites return less, underdogs return more. Ideal for beginners and for markets where one team is clearly stronger.',
     options: [
-      { key: 'hw', label: 'Home Win',  odds: '2.10', hint: 'Home team wins in 90 min' },
-      { key: 'dr', label: 'Draw',      odds: '3.40', hint: 'Level after full time' },
-      { key: 'aw', label: 'Away Win',  odds: '3.75', hint: 'Visiting team wins' },
+      { key: 'hw', odds: '2.10' },
+      { key: 'dr', odds: '3.40' },
+      { key: 'aw', odds: '3.75' },
     ],
   },
   {
@@ -32,14 +29,9 @@ const sections = [
     gradTo: '#f59e0b',
     glowColor: 'rgba(245,158,11,0.45)',
     accentHex: '#f59e0b',
-    badge: 'Value Bet',
-    title: 'Asian Handicap',
-    subtitle: 'Level the playing field',
-    description:
-      'Eliminates the draw by giving one team a virtual head-start. A −1.5 handicap on the favorite means they must win by 2+ goals. Sharper lines and often better value than traditional 1X2 markets — popular with experienced bettors.',
     options: [
-      { key: 'ah1', label: 'Home −1.5', odds: '1.85', hint: 'Home wins by 2 or more goals' },
-      { key: 'ah2', label: 'Away +1.5', odds: '1.95', hint: 'Away loses by 1 or wins' },
+      { key: 'ah1', odds: '1.85' },
+      { key: 'ah2', odds: '1.95' },
     ],
   },
   {
@@ -49,15 +41,10 @@ const sections = [
     gradTo: '#10b981',
     glowColor: 'rgba(16,185,129,0.45)',
     accentHex: '#10b981',
-    badge: 'High Action',
-    title: 'Over / Under',
-    subtitle: 'Total goals scored',
-    description:
-      'Wager on the combined number of goals by both teams. If the line is 2.5, Over wins with 3+ goals, Under wins with 2 or fewer. Great when you have conviction on game pace but are uncertain of the winner.',
     options: [
-      { key: 'o25', label: 'Over 2.5',  odds: '1.72', hint: '3 or more total goals' },
-      { key: 'u25', label: 'Under 2.5', odds: '2.05', hint: '2 or fewer total goals' },
-      { key: 'o35', label: 'Over 3.5',  odds: '2.90', hint: '4 or more total goals' },
+      { key: 'o25', odds: '1.72' },
+      { key: 'u25', odds: '2.05' },
+      { key: 'o35', odds: '2.90' },
     ],
   },
   {
@@ -67,14 +54,9 @@ const sections = [
     gradTo: '#ef4444',
     glowColor: 'rgba(239,68,68,0.45)',
     accentHex: '#ef4444',
-    badge: 'Fan Favorite',
-    title: 'Both Teams to Score',
-    subtitle: 'Will both sides find the net?',
-    description:
-      "Predict whether each side scores at least one goal. The final result doesn't matter — only whether both nets are broken. BTTS Yes thrives in high-scoring matchups; BTTS No suits tight, defensive encounters.",
     options: [
-      { key: 'btts_y', label: 'BTTS — Yes', odds: '1.65', hint: 'Both teams score 1+ goals' },
-      { key: 'btts_n', label: 'BTTS — No',  odds: '2.15', hint: 'At least one clean sheet kept' },
+      { key: 'btts_y', odds: '1.65' },
+      { key: 'btts_n', odds: '2.15' },
     ],
   },
   {
@@ -84,15 +66,10 @@ const sections = [
     gradTo: '#8b5cf6',
     glowColor: 'rgba(139,92,246,0.45)',
     accentHex: '#8b5cf6',
-    badge: 'Quick Win',
-    title: 'First Goal Scorer',
-    subtitle: 'Name the opening goal hero',
-    description:
-      'Predict which player will score first. Odds are generous given the many possible scorers. High variance with significant upside — a single goal from the right player can multiply your stake many times over.',
     options: [
-      { key: 'fgs_a', label: 'Striker A',   odds: '5.50',  hint: 'Top scorer this season' },
-      { key: 'fgs_b', label: 'Midfielder B', odds: '8.00',  hint: 'Known for long-range efforts' },
-      { key: 'fgs_ng', label: 'No Goal',    odds: '12.00', hint: 'Match ends goalless' },
+      { key: 'fgs_a', odds: '5.50' },
+      { key: 'fgs_b', odds: '8.00' },
+      { key: 'fgs_ng', odds: '12.00' },
     ],
   },
   {
@@ -102,18 +79,31 @@ const sections = [
     gradTo: '#0ea5e9',
     glowColor: 'rgba(14,165,233,0.45)',
     accentHex: '#0ea5e9',
-    badge: 'Specialist',
-    title: 'Corner Betting',
-    subtitle: 'Wager on set-piece volume',
-    description:
-      'Bet on the total number of corners, which team wins more corners, or exact corner count intervals. A specialist market that rewards tactical knowledge — teams that dominate possession typically generate more corners.',
     options: [
-      { key: 'co9',   label: 'Over 9.5 Corners',  odds: '1.80', hint: '10 or more corners total' },
-      { key: 'cu9',   label: 'Under 9.5 Corners', odds: '1.95', hint: '9 or fewer corners total' },
-      { key: 'cmost', label: 'Home Most Corners',  odds: '2.20', hint: 'Home team wins corner count' },
+      { key: 'co9', odds: '1.80' },
+      { key: 'cu9', odds: '1.95' },
+      { key: 'cmost', odds: '2.20' },
     ],
   },
 ]
+
+const sections = computed(() =>
+  sectionDefs.map((def) => {
+    const base = `bettingOptionsModal.sections.${def.id}`
+    return {
+      ...def,
+      badge: t(`${base}.badge`),
+      title: t(`${base}.title`),
+      subtitle: t(`${base}.subtitle`),
+      description: t(`${base}.description`),
+      options: def.options.map((o) => ({
+        ...o,
+        label: t(`${base}.options.${o.key}.label`),
+        hint: t(`${base}.options.${o.key}.hint`),
+      })),
+    }
+  }),
+)
 
 function handlePlaceBet(sectionId: string, key: string) {
   const id = `${sectionId}-${key}`
@@ -145,7 +135,7 @@ watch(
         v-if="store.isOpen"
         role="dialog"
         aria-modal="true"
-        aria-label="Betting Markets"
+        :aria-label="$t('bettingOptionsModal.dialogAria')"
         class="fixed inset-x-0 bottom-0 z-[70] max-w-[430px] mx-auto flex flex-col max-h-[92dvh]"
       >
         <div
@@ -165,10 +155,10 @@ watch(
           >
             <div>
               <h2 class="text-lg font-bold text-[var(--color-text)] leading-tight">
-                Betting Markets
+                {{ $t('bettingOptionsModal.title') }}
               </h2>
               <p class="text-xs text-[var(--color-muted)] mt-0.5">
-                {{ sections.length }} markets available · World Cup 2026
+                {{ $t('bettingOptionsModal.subtitle', { count: sections.length }) }}
               </p>
             </div>
             <button
@@ -177,7 +167,7 @@ watch(
                      bg-[var(--color-bg)] border border-[var(--color-border)]
                      text-[var(--color-muted)] hover:text-[var(--color-text)]
                      transition-all active:scale-90"
-              aria-label="Close betting markets"
+              :aria-label="$t('bettingOptionsModal.closeAria')"
             >
               <X class="w-4 h-4" />
             </button>
@@ -279,7 +269,7 @@ watch(
                             class="w-3 h-3 border-2 border-current/30 border-t-current
                                    rounded-full animate-spin"
                           />
-                          Added
+                          {{ $t('bettingOptionsModal.added') }}
                         </span>
                         <span v-else key="odds">{{ option.odds }}</span>
                       </Transition>
@@ -303,10 +293,10 @@ watch(
                       class="flex items-center gap-2"
                     >
                       <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Placing Bet...
+                      {{ $t('bettingOptionsModal.placingBet') }}
                     </span>
                     <span v-else key="cta" class="flex items-center gap-2">
-                      Place Bet — {{ section.title }}
+                      {{ $t('bettingOptionsModal.placeBetCta', { section: section.title }) }}
                       <ChevronRight class="w-4 h-4" />
                     </span>
                   </Transition>

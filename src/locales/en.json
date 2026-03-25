@@ -174,5 +174,80 @@
       "overUnder": "Over/Under",
       "oddEven": "Odd/Even"
     }
+  },
+  "bettingOptionsModal": {
+    "title": "Betting Markets",
+    "subtitle": "{count} markets available · World Cup 2026",
+    "closeAria": "Close betting markets",
+    "dialogAria": "Betting Markets",
+    "added": "Added",
+    "placingBet": "Placing Bet...",
+    "placeBetCta": "Place Bet — {section}",
+    "sections": {
+      "moneyline": {
+        "badge": "Most Popular",
+        "title": "Moneyline",
+        "subtitle": "Pick the outright winner",
+        "description": "The simplest form of wagering — select which side wins the match. No spreads or handicaps. Odds reflect probability: favorites return less, underdogs return more. Ideal for beginners and for markets where one team is clearly stronger.",
+        "options": {
+          "hw": { "label": "Home Win", "hint": "Home team wins in 90 min" },
+          "dr": { "label": "Draw", "hint": "Level after full time" },
+          "aw": { "label": "Away Win", "hint": "Visiting team wins" }
+        }
+      },
+      "handicap": {
+        "badge": "Value Bet",
+        "title": "Asian Handicap",
+        "subtitle": "Level the playing field",
+        "description": "Eliminates the draw by giving one team a virtual head-start. A −1.5 handicap on the favorite means they must win by 2+ goals. Sharper lines and often better value than traditional 1X2 markets — popular with experienced bettors.",
+        "options": {
+          "ah1": { "label": "Home −1.5", "hint": "Home wins by 2 or more goals" },
+          "ah2": { "label": "Away +1.5", "hint": "Away loses by 1 or wins" }
+        }
+      },
+      "overunder": {
+        "badge": "High Action",
+        "title": "Over / Under",
+        "subtitle": "Total goals scored",
+        "description": "Wager on the combined number of goals by both teams. If the line is 2.5, Over wins with 3+ goals, Under wins with 2 or fewer. Great when you have conviction on game pace but are uncertain of the winner.",
+        "options": {
+          "o25": { "label": "Over 2.5", "hint": "3 or more total goals" },
+          "u25": { "label": "Under 2.5", "hint": "2 or fewer total goals" },
+          "o35": { "label": "Over 3.5", "hint": "4 or more total goals" }
+        }
+      },
+      "btts": {
+        "badge": "Fan Favorite",
+        "title": "Both Teams to Score",
+        "subtitle": "Will both sides find the net?",
+        "description": "Predict whether each side scores at least one goal. The final result doesn't matter — only whether both nets are broken. BTTS Yes thrives in high-scoring matchups; BTTS No suits tight, defensive encounters.",
+        "options": {
+          "btts_y": { "label": "BTTS — Yes", "hint": "Both teams score 1+ goals" },
+          "btts_n": { "label": "BTTS — No", "hint": "At least one clean sheet kept" }
+        }
+      },
+      "firstgoal": {
+        "badge": "Quick Win",
+        "title": "First Goal Scorer",
+        "subtitle": "Name the opening goal hero",
+        "description": "Predict which player will score first. Odds are generous given the many possible scorers. High variance with significant upside — a single goal from the right player can multiply your stake many times over.",
+        "options": {
+          "fgs_a": { "label": "Striker A", "hint": "Top scorer this season" },
+          "fgs_b": { "label": "Midfielder B", "hint": "Known for long-range efforts" },
+          "fgs_ng": { "label": "No Goal", "hint": "Match ends goalless" }
+        }
+      },
+      "corners": {
+        "badge": "Specialist",
+        "title": "Corner Betting",
+        "subtitle": "Wager on set-piece volume",
+        "description": "Bet on the total number of corners, which team wins more corners, or exact corner count intervals. A specialist market that rewards tactical knowledge — teams that dominate possession typically generate more corners.",
+        "options": {
+          "co9": { "label": "Over 9.5 Corners", "hint": "10 or more corners total" },
+          "cu9": { "label": "Under 9.5 Corners", "hint": "9 or fewer corners total" },
+          "cmost": { "label": "Home Most Corners", "hint": "Home team wins corner count" }
+        }
+      }
+    }
   }
 }

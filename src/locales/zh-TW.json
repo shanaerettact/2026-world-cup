@@ -174,5 +174,80 @@
       "overUnder": "大小",
       "oddEven": "單雙"
     }
+  },
+  "bettingOptionsModal": {
+    "title": "投注市場",
+    "subtitle": "共 {count} 種玩法 · 2026 世界盃",
+    "closeAria": "關閉投注市場",
+    "dialogAria": "投注市場",
+    "added": "已加入",
+    "placingBet": "下注中…",
+    "placeBetCta": "下注 — {section}",
+    "sections": {
+      "moneyline": {
+        "badge": "最熱門",
+        "title": "獨贏（1X2）",
+        "subtitle": "選擇勝方",
+        "description": "最單純的玩法——選哪一邊贏球。沒有讓分或盤口。賠率反映勝率：熱門回報較低、冷門較高。適合新手，或兩隊實力差距明顯的場次。",
+        "options": {
+          "hw": { "label": "主勝", "hint": "90 分鐘內主隊獲勝" },
+          "dr": { "label": "和局", "hint": "全場結束仍平手" },
+          "aw": { "label": "客勝", "hint": "客隊獲勝" }
+        }
+      },
+      "handicap": {
+        "badge": "價值盤",
+        "title": "亞洲讓球",
+        "subtitle": "拉平雙方差距",
+        "description": "透過虛擬讓分消除和局可能。熱門讓 −1.5 代表須淨勝 2 球以上。盤口通常比傳統 1X2 更精準，深受資深玩家喜愛。",
+        "options": {
+          "ah1": { "label": "主隊 −1.5", "hint": "主隊淨勝 2 球或以上" },
+          "ah2": { "label": "客隊 +1.5", "hint": "客隊最多輸 1 球或贏球" }
+        }
+      },
+      "overunder": {
+        "badge": "高張力",
+        "title": "大小球",
+        "subtitle": "總進球數",
+        "description": "押兩隊合計進球數。若盤口為 2.5，進 3 球以上為「大」，2 球或以下為「小」。對比賽節奏有把握、但不確定勝負時很適合。",
+        "options": {
+          "o25": { "label": "大 2.5", "hint": "總進球 3 球或以上" },
+          "u25": { "label": "小 2.5", "hint": "總進球 2 球或以下" },
+          "o35": { "label": "大 3.5", "hint": "總進球 4 球或以上" }
+        }
+      },
+      "btts": {
+        "badge": "球迷最愛",
+        "title": "雙方進球",
+        "subtitle": "兩隊是否都有進球？",
+        "description": "預測兩隊是否都至少進 1 球，與最終勝負無關。大比分對攻適合「是」；防守大戰則常選「否」。",
+        "options": {
+          "btts_y": { "label": "雙方進球 — 是", "hint": "兩隊皆至少進 1 球" },
+          "btts_n": { "label": "雙方進球 — 否", "hint": "至少一隊零失球" }
+        }
+      },
+      "firstgoal": {
+        "badge": "快攻",
+        "title": "首名進球者",
+        "subtitle": "誰先破網？",
+        "description": "預測哪位球員先進球。可能進球人選多、賠率通常較高；押中一次報酬可觀。",
+        "options": {
+          "fgs_a": { "label": "前鋒 A", "hint": "本季進球王熱門" },
+          "fgs_b": { "label": "中場 B", "hint": "擅長遠射" },
+          "fgs_ng": { "label": "無進球", "hint": "全場 0–0" }
+        }
+      },
+      "corners": {
+        "badge": "專家盤",
+        "title": "角球",
+        "subtitle": "定位球與邊路戰",
+        "description": "可押角球總數、哪隊角球較多或區間等。熟悉戰術與控球風格的玩家較有優勢——控球強的一方通常角球較多。",
+        "options": {
+          "co9": { "label": "大 9.5 角球", "hint": "全場角球 10 個或以上" },
+          "cu9": { "label": "小 9.5 角球", "hint": "全場角球 9 個或以下" },
+          "cmost": { "label": "主隊角球較多", "hint": "主隊角球數勝出" }
+        }
+      }
+    }
   }
 }
