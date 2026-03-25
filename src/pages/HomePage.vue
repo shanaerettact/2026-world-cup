@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { Trophy, TrendingUp, Flame } from 'lucide-vue-next'
 import { useMatchStore } from '@/stores/matchStore'
 import FeaturedMatchCard from '@/components/FeaturedMatchCard.vue'
+import ChampionPredictionSection from '@/components/ChampionPredictionSection.vue'
 import { useHomeStore } from '@/stores/homeStore'
 import type { Match } from '@/services/api/matchApi'
 import type { Game, Group } from '@/schema/homeSchema'
@@ -171,6 +172,9 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Champion Prediction Section -->
+    <ChampionPredictionSection />
 
     <!-- Live Now Section -->
     <section v-if="(homeStore.homeData?.group?.length ?? 0) > 0" class="mb-6">
