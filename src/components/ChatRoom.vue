@@ -5,16 +5,17 @@ import { useChatStore } from '@/stores/chatStore'
 import { useChatSocket } from '@/composables/useChatSocket'
 
 const chatStore = useChatStore()
-useChatSocket()
+const { wsConnected, loginAcknowledged, sendChatMessage } = useChatSocket()
 
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 
 const sendMessage = () => {
-  if (messageInput.value.trim()) {
-    chatStore.sendMessage(messageInput.value.trim())
-    messageInput.value = ''
-  }
+  const text = messageInput.value.trim()
+  if (!text || !loginAcknowledged.value) return
+  chatStore.sendMessage(text)
+  sendChatMessage(text)
+  messageInput.value = ''
 }
 
 const scrollToBottom = () => {
@@ -71,8 +72,14 @@ onMounted(() => {
           <div class="flex items-center justify-between px-4 pb-3 border-b border-[var(--color-border)]">
             <div class="flex items-center gap-3">
               <h2 class="text-lg font-bold text-[var(--color-text)]">{{ $t('chat.title') }}</h2>
-              <div class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-success/10">
-                <span class="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <div
+                class="flex items-center gap-1.5 px-2 py-1 rounded-full"
+                :class="wsConnected ? 'bg-success/10' : 'bg-[var(--color-border)]/30'"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  :class="wsConnected ? 'bg-success animate-pulse' : 'bg-[var(--color-muted)]'"
+                />
                 <Users class="w-3 h-3 text-success" />
                 <span class="text-xs font-medium text-success">
                   {{ chatStore.onlineUsers.toLocaleString() }}
@@ -135,7 +142,7 @@ onMounted(() => {
               />
               <button
                 type="submit"
-                :disabled="!messageInput.trim()"
+                :disabled="!loginAcknowledged || !messageInput.trim()"
                 class="w-12 h-12 rounded-xl flex items-center justify-center
                        bg-gradient-to-r from-primary to-primary-light
                        text-white shadow-lg shadow-primary/20
