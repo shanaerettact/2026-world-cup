@@ -6,6 +6,7 @@ import BetslipDrawer from '@/components/BetslipDrawer.vue'
 import ConfirmBetModal from '@/components/ConfirmBetModal.vue'
 import ChatRoom from '@/components/ChatRoom.vue'
 import MatchDetailPanel from '@/components/MatchDetailPanel.vue'
+import BettingOptionsModal from '@/components/BettingOptionsModal.vue'
 
 // Initialize theme
 useTheme()
@@ -53,6 +54,7 @@ useTheme()
       <ConfirmBetModal />
       <ChatRoom />
       <MatchDetailPanel />
+      <BettingOptionsModal />
     </div>
   </div>
 </template>

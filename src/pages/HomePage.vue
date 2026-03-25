@@ -159,7 +159,7 @@ onUnmounted(() => {
         <h1 class="text-2xl font-bold text-white mb-1">2026</h1>
         <p class="text-sm text-white/70 mb-4">{{ $t('home.hero.hosts') }}</p>
         
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 flex-wrap">
           <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm">
             <Flame class="w-4 h-4 text-amber-300" />
             <span class="text-xs font-medium text-white">{{ $t('home.hero.liveMatches', { count: matchStore.liveMatches.length }) }}</span>
