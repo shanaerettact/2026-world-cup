@@ -150,9 +150,70 @@
       "mexicoCity": "墨西哥城體育場", "guadalajara": "瓜達拉哈拉體育場", "toronto": "多倫多體育場",
       "losAngeles": "洛杉磯體育場", "sanFrancisco": "舊金山灣區體育場", "newYorkNewJersey": "紐約/紐澤西體育場",
       "boston": "波士頓體育場", "vancouver": "溫哥華卑詩體育館", "houston": "休士頓體育場",
-      "dallas": "達拉斯體育場", "philadelphia": "費城體育場", "monterrey": "蒙特雷體育場",
+      "dallas": "達拉斯體育場", "philadelphia": "費城體育場", "monterrey": "���特雷體育場",
       "atlanta": "亞特蘭大體育場", "seattle": "西雅圖體育場", "miami": "邁阿密體育場",
       "kansasCity": "堪薩斯城體育場"
+    }
+  },
+  "champion": {
+    "sectionTitle": "冠軍預測",
+    "sectionSubtitle": "誰將捧起獎盃？",
+    "tabs": {
+      "solo": "單隊預測",
+      "group": "組合過關"
+    },
+    "solo": {
+      "title": "選擇冠軍",
+      "subtitle": "選擇一支您認為將贏得 2026 世界盃的隊伍",
+      "searchPlaceholder": "搜尋球隊…",
+      "confirmBtn": "確認單隊預測",
+      "oddsLabel": "賠率",
+      "selected": "已選"
+    },
+    "group": {
+      "title": "建立您的組合",
+      "subtitle": "選擇 2–8 支球隊，若其中任一隊奪冠即獲勝",
+      "addTeam": "新增球隊",
+      "minHint": "至少選擇 2 支球隊",
+      "confirmBtn": "確認組合過關",
+      "teamsSelected": "已選 {count} 支球隊",
+      "combinedOdds": "組合賠率",
+      "removeTeam": "移除"
+    },
+    "stake": {
+      "label": "投注金額",
+      "potential": "預計派彩"
+    },
+    "confirmModal": {
+      "title": "確認預測",
+      "soloTitle": "單隊冠軍預測",
+      "groupTitle": "組合過關預測",
+      "teams": "球隊",
+      "odds": "賠率",
+      "stake": "投注金額",
+      "payout": "預計派彩",
+      "placeBet": "確認下注",
+      "cancel": "取消"
+    },
+    "successToast": "預測已成功送出！"
+  },
+  "betHistory": {
+    "tabs": {
+      "standard": "一般注單",
+      "solo": "單隊預測",
+      "group": "組合過關"
+    },
+    "solo": {
+      "empty": "尚無單隊預測",
+      "emptyHint": "選擇一支冠軍隊伍開始預測"
+    },
+    "group": {
+      "empty": "尚無組合過關",
+      "emptyHint": "建立球隊組合開始預測"
+    },
+    "label": {
+      "champion": "冠軍",
+      "anyOf": "任一"
     }
   },
   "matchDetail": {

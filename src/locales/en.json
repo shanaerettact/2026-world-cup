@@ -155,6 +155,67 @@
       "kansasCity": "Kansas City Stadium"
     }
   },
+  "champion": {
+    "sectionTitle": "Champion Prediction",
+    "sectionSubtitle": "Who will lift the trophy?",
+    "tabs": {
+      "solo": "Solo Pick",
+      "group": "Group Parlay"
+    },
+    "solo": {
+      "title": "Pick the Champion",
+      "subtitle": "Select one team you believe will win the 2026 World Cup",
+      "searchPlaceholder": "Search team…",
+      "confirmBtn": "Confirm Solo Pick",
+      "oddsLabel": "Odds",
+      "selected": "Selected"
+    },
+    "group": {
+      "title": "Build Your Group",
+      "subtitle": "Select 2–8 teams. Win if any team in your group becomes champion",
+      "addTeam": "Add a team",
+      "minHint": "Select at least 2 teams",
+      "confirmBtn": "Confirm Group Parlay",
+      "teamsSelected": "{count} teams selected",
+      "combinedOdds": "Combined Odds",
+      "removeTeam": "Remove"
+    },
+    "stake": {
+      "label": "Stake",
+      "potential": "Potential Payout"
+    },
+    "confirmModal": {
+      "title": "Confirm Prediction",
+      "soloTitle": "Solo Champion Pick",
+      "groupTitle": "Group Parlay Pick",
+      "teams": "Teams",
+      "odds": "Odds",
+      "stake": "Stake",
+      "payout": "Potential Payout",
+      "placeBet": "Place Prediction",
+      "cancel": "Cancel"
+    },
+    "successToast": "Prediction placed successfully!"
+  },
+  "betHistory": {
+    "tabs": {
+      "standard": "Standard",
+      "solo": "Solo Pick",
+      "group": "Group Parlay"
+    },
+    "solo": {
+      "empty": "No solo predictions yet",
+      "emptyHint": "Pick a single champion to get started"
+    },
+    "group": {
+      "empty": "No group parlays yet",
+      "emptyHint": "Build a team group to get started"
+    },
+    "label": {
+      "champion": "Champion",
+      "anyOf": "Any of"
+    }
+  },
   "matchDetail": {
     "connecting": "Connecting to live stream...",
     "promo": {
