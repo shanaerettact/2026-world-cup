@@ -49,6 +49,23 @@ const TEAM_FLAG: Record<string, string> = {
   NZL: '🇳🇿', FRA: '🇫🇷', SEN: '🇸🇳', NOR: '🇳🇴', ARG: '🇦🇷', ALG: '🇩🇿', AUT: '🇦🇹', JOR: '🇯🇴', POR: '🇵🇹',
   ENG: '🏴', CRO: '🇭🇷', GHA: '🇬🇭', PAN: '🇵🇦', UZB: '🇺🇿', COL: '🇨🇴',
 }
+
+/** 依隊名比對 FIFA 代碼或目前語系 `schedule.teams.*` 譯名，回傳 TEAM_FLAG emoji */
+export function flagEmojiForTeamTitle(
+  teamTitle: string,
+  t: (key: string) => string
+): string | undefined {
+  const raw = teamTitle.trim()
+  if (!raw) return undefined
+  const upper = raw.toUpperCase()
+  for (const code of Object.keys(TEAM_FLAG)) {
+    if (upper === code.toUpperCase()) return TEAM_FLAG[code]
+    const localized = t(`schedule.teams.${code}`)
+    if (localized && raw === localized) return TEAM_FLAG[code]
+  }
+  return undefined
+}
+
 function teamFromCode(code: string): { name: string; flag: string; key: string } {
   const c = code.split('/')[0].trim()
   const flag = TEAM_FLAG[c] ?? '🏳️'

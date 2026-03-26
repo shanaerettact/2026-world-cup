@@ -7,6 +7,7 @@ import { useMatchStore } from '@/stores/matchStore'
 import { useHomeStore, gameToFeaturedCardView, type FeaturedCardView } from '@/stores/homeStore'
 import type { Group } from '@/schema/homeSchema'
 import { useSiteGameStore } from '@/stores/siteGameStore'
+import { flagEmojiForTeamTitle } from '@/services/api/matchApi'
 
 const props = defineProps<{
   group: Group
@@ -24,6 +25,13 @@ const view = computed((): FeaturedCardView | null => {
   if (!g) return null
   return gameToFeaturedCardView(g)
 })
+
+const team1FlagEmoji = computed(() =>
+  view.value ? flagEmojiForTeamTitle(view.value.game.team1_title, t) : undefined
+)
+const team2FlagEmoji = computed(() =>
+  view.value ? flagEmojiForTeamTitle(view.value.game.team2_title, t) : undefined
+)
 
 const team1ImgError = ref(false)
 const team2ImgError = ref(false)
@@ -133,8 +141,13 @@ const openMatchDetail = (scrollToTabs = false) => {
       <!-- Home Team -->
       <div class="flex flex-col items-center gap-2 flex-1">
         <span class="text-4xl flex items-center justify-center min-h-[2.5rem]">
+          <span
+            v-if="team1FlagEmoji"
+            class="text-4xl leading-none select-none"
+            aria-hidden="true"
+          >{{ team1FlagEmoji }}</span>
           <img
-            v-if="view.game.team1_icon && !team1ImgError"
+            v-else-if="view.game.team1_icon && !team1ImgError"
             :src="view.game.team1_icon"
             :alt="view.game.team1_title"
             class="w-full h-full object-contain"
@@ -167,8 +180,13 @@ const openMatchDetail = (scrollToTabs = false) => {
       <!-- Away Team -->
       <div class="flex flex-col items-center gap-2 flex-1">
         <span class="text-4xl flex items-center justify-center min-h-[2.5rem]">
+          <span
+            v-if="team2FlagEmoji"
+            class="text-4xl leading-none select-none"
+            aria-hidden="true"
+          >{{ team2FlagEmoji }}</span>
           <img
-            v-if="view.game.team2_icon && !team2ImgError"
+            v-else-if="view.game.team2_icon && !team2ImgError"
             :src="view.game.team2_icon"
             :alt="view.game.team2_title"
             class="w-full h-full object-contain"
