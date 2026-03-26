@@ -61,6 +61,10 @@
   "live": {
     "title": "投注紀錄",
     "subtitle": "您的投注紀錄",
+    "tabs": {
+      "status1": "未結算",
+      "status2": "已結算"
+    },
     "empty": {
       "title": "尚無投注紀錄",
       "subtitle": "您的投注紀錄將顯示於此"
@@ -69,7 +73,8 @@
       "pending": "待開獎",
       "won": "已中獎",
       "lost": "未中獎"
-    }
+    },
+    "betTime": "投注時間：{time}"
   },
   "account": {
     "membership": {

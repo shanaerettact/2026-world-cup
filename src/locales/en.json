@@ -61,6 +61,10 @@
   "live": {
     "title": "Bet History",
     "subtitle": "Your betting records",
+    "tabs": {
+      "status1": "Open",
+      "status2": "Settled"
+    },
     "empty": {
       "title": "No Bet History",
       "subtitle": "Your bets will appear here"
@@ -69,7 +73,8 @@
       "pending": "Pending",
       "won": "Won",
       "lost": "Lost"
-    }
+    },
+    "betTime": "Bet time: {time}"
   },
   "account": {
     "membership": {
