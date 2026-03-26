@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronRight, Play, Zap } from 'lucide-vue-next'
 import { useBetSlipStore } from '@/stores/betSlipStore'
@@ -114,6 +114,9 @@ const openMatchDetail = (scrollToTabs = false) => {
   homeStore.selectGame(v.game, { scrollToTabs })
   siteGameStore.fetchSiteGame(Number(v.game.id))
 }
+onMounted(() => {
+  console.log('openMatchDetail', view.value?.game)
+})
 
 </script>
 

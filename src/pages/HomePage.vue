@@ -78,6 +78,25 @@ const upcomingGroups = computed(() => {
   return filteredUpcomingMatches.value.map(matchToGroup)
 })
 
+/** 與 MatchDetailPanel 一致：API "yyyy-MM-dd HH:mm:ss" */
+function parseApiDateTime(s: string | undefined): number | null {
+  if (!s?.trim()) return null
+  const ms = Date.parse(s.trim().replace(' ', 'T'))
+  return Number.isNaN(ms) ? null : ms
+}
+
+/** 已結束（end_time < 現在）的賽事不顯示；無法解析或為空則仍顯示 */
+const liveFeaturedGames = computed(() => {
+  const games = homeStore.homeData?.group?.[0]?.game
+  if (!games?.length) return []
+  const now = Date.now()
+  return games.filter((g) => {
+    const end = parseApiDateTime(g.end_time)
+    if (end == null) return true
+    return end >= now
+  })
+})
+
 watch(upcomingDates, (dates) => {
   if (dates.length && selectedDate.value && !dates.includes(selectedDate.value)) selectedDate.value = ''
 }, { immediate: true })
@@ -173,7 +192,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Live Now Section -->
-    <section v-if="(homeStore.homeData?.group?.length ?? 0) > 0" class="mb-6">
+    <section v-if="liveFeaturedGames.length > 0" class="mb-6">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-bold text-[var(--color-text)] flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-danger animate-pulse" />
@@ -188,7 +207,7 @@ onUnmounted(() => {
       </div>
       <div class="space-y-4">
         <FeaturedMatchCard
-          v-for="g in homeStore.homeData?.group?.[0]?.game"
+          v-for="g in liveFeaturedGames"
           :key="g.id"
           :group="{ id: g.id, title: '', icon: '', image: '', game: [g] }"
         />
