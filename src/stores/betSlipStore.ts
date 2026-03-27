@@ -41,6 +41,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   const betMode = ref<BetMode>('single')
   const isDrawerOpen = ref(false)
   const isConfirmModalOpen = ref(false)
+  const purchaseInsurance = ref(false)
 
   const totalOdds = computed(() => {
     if (selections.value.length === 0) return 0
@@ -99,6 +100,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   function clearSelections() {
     selections.value = []
     isDrawerOpen.value = false
+    purchaseInsurance.value = false
   }
 
   function setStake(amount: number) {
@@ -152,6 +154,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     betMode,
     isDrawerOpen,
     isConfirmModalOpen,
+    purchaseInsurance,
     totalOdds,
     potentialPayout,
     riskLevel,

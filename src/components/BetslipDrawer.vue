@@ -1,38 +1,36 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X, Trash2, AlertTriangle, TrendingUp, Shield } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
+import { X, Trash2, CircleHelp } from 'lucide-vue-next'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 
 const betSlipStore = useBetSlipStore()
-const { t, locale } = useI18n()
+const { purchaseInsurance } = storeToRefs(betSlipStore)
+const { locale } = useI18n()
 
-const riskColor = computed(() => {
-  switch (betSlipStore.riskLevel) {
-    case 'low': return 'text-primary bg-primary/10 border-primary/20'
-    case 'medium': return 'text-warning bg-warning/10 border-warning/20'
-    case 'high': return 'text-danger bg-danger/10 border-danger/20'
-    default: return 'text-primary bg-primary/10 border-primary/20'
+const insuranceHelpOpen = ref(false)
+const insuranceHelpWrapRef = ref<HTMLElement | null>(null)
+
+watch(insuranceHelpOpen, (open) => {
+  if (!open) return
+  const close = (e: MouseEvent) => {
+    const t = e.target as Node
+    if (insuranceHelpWrapRef.value && !insuranceHelpWrapRef.value.contains(t)) {
+      insuranceHelpOpen.value = false
+    }
+  }
+  const id = window.setTimeout(() => document.addEventListener('click', close, true), 0)
+  return () => {
+    window.clearTimeout(id)
+    document.removeEventListener('click', close, true)
   }
 })
 
-const riskLabel = computed(() => {
-  switch (betSlipStore.riskLevel) {
-    case 'low': return t('risk.low')
-    case 'medium': return t('risk.medium')
-    case 'high': return t('risk.high')
-    default: return t('risk.low')
-  }
-})
-
-const RiskIcon = computed(() => {
-  switch (betSlipStore.riskLevel) {
-    case 'low': return Shield
-    case 'medium': return TrendingUp
-    case 'high': return AlertTriangle
-    default: return Shield
-  }
-})
+function toggleInsuranceHelp(e: MouseEvent) {
+  e.stopPropagation()
+  insuranceHelpOpen.value = !insuranceHelpOpen.value
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat(locale.value, {
@@ -48,9 +46,10 @@ const handleStakeChange = (e: Event) => {
   betSlipStore.setStake(value)
 }
 
-// Lock body scroll when open
+// Lock body scroll when open；關閉抽屜時收合保險說明
 watch(() => betSlipStore.isDrawerOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  if (!open) insuranceHelpOpen.value = false
 })
 </script>
 
@@ -128,13 +127,40 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
 
           <!-- Summary -->
           <div class="p-4 space-y-3">
-            <!-- Risk Level -->
-            <div 
-              class="flex items-center gap-2 p-2 rounded-xl border"
-              :class="riskColor"
+            <!-- Purchase insurance -->
+            <div
+              class="flex items-center gap-2 p-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]"
             >
-              <component :is="RiskIcon" class="w-4 h-4" />
-              <span class="text-sm font-medium">{{ riskLabel }}</span>
+              <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer select-none">
+                <input
+                  v-model="purchaseInsurance"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-[var(--color-border)] text-primary focus:ring-primary shrink-0"
+                />
+                <span class="text-sm font-medium text-[var(--color-text)]">{{ $t('betSlip.insurance.label') }}</span>
+              </label>
+              <div ref="insuranceHelpWrapRef" class="relative shrink-0">
+                <button
+                  type="button"
+                  class="p-1 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-card)] hover:text-primary transition-colors"
+                  :aria-label="$t('betSlip.insurance.helpAria')"
+                  :aria-expanded="insuranceHelpOpen"
+                  @click="toggleInsuranceHelp"
+                >
+                  <CircleHelp class="w-5 h-5" />
+                </button>
+                <Transition name="fade">
+                  <div
+                    v-if="insuranceHelpOpen"
+                    class="absolute bottom-full right-0 mb-2 z-[70] w-[min(100vw-2rem,18rem)] rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-xl shadow-black/20"
+                    role="tooltip"
+                  >
+                    <p class="text-xs text-[var(--color-text)] leading-relaxed">
+                      {{ $t('betSlip.insurance.tooltip') }}
+                    </p>
+                  </div>
+                </Transition>
+              </div>
             </div>
 
             <!-- Stake Input -->

@@ -113,7 +113,12 @@
     "toggleAriaLabel": "Toggle theme"
   },
   "betSlip": {
-    "title": "Bet Slip"
+    "title": "Bet Slip",
+    "insurance": {
+      "label": "Purchase insurance",
+      "helpAria": "Insurance rules",
+      "tooltip": "By opting in, you agree to add insurance to this bet. If the result does not match your selection, you may receive partial stake protection or a refund according to the published insurance terms. Fees, eligible markets, and settlement follow this site’s rules and promotions."
+    }
   },
   "risk": {
     "low": "Low Risk",

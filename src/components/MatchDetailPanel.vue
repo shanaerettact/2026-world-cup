@@ -7,6 +7,7 @@ import { useHomeStore, homeGameToMatch } from '@/stores/homeStore'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 import { useChatStore } from '@/stores/chatStore'
 import { useSiteGameStore } from '@/stores/siteGameStore'
+import type { GamePeriod } from '@/schema/siteGameSchema'
 
 const matchStore = useMatchStore()
 const homeStore = useHomeStore()
@@ -15,8 +16,8 @@ const chatStore = useChatStore()
 const siteGameStore = useSiteGameStore() 
 const { t } = useI18n()
 
-const tabs = computed(() => 
-  siteGameStore.siteGame?.list.map(item => ({
+const tabs = computed(() =>
+  siteGameStore.siteGame?.list.map((item: GamePeriod) => ({
     key: item.id,
     label: item.title,
     item: item.item,
@@ -161,7 +162,7 @@ function resetActiveTabToFirst() {
 
 watch(tabs, (list) => {
   if (!list?.length) return
-  if (!activeTab.value || !list.some((t) => t.key === activeTab.value)) {
+  if (!activeTab.value || !list.some((t: { key: string }) => t.key === activeTab.value)) {
     activeTab.value = list[0].key
   }
 })
@@ -308,7 +309,7 @@ onMounted(() => {
             <!-- Moneyline -->
             <template v-for="item in siteGameStore.siteGame?.list?.[0]?.item" :key="item.id">
               <div v-if="activeTab === tabKeyAt(0)" class="mb-4">
-                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t(item.title) }}</h3>
+                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ item.title }}</h3>
                 <div 
                 class="grid grid-cols-3 gap-2">
                   <button
@@ -364,7 +365,7 @@ onMounted(() => {
             <!-- Handicap -->
             <template v-for="item in siteGameStore.siteGame?.list?.[1]?.item" :key="item.id">
               <div v-if="activeTab === tabKeyAt(1)" class="mb-4">
-                  <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t(item.title) }}</h3>
+                  <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ item.title }}</h3>
                 <div class="grid grid-cols-2 gap-2">
                   <button
                     @click="handleOddsClick('Handicap', 'home', `${homeTeamName} ${item.item?.[0]?.draw ?? ''}`, playItemOddsNumber(item.item?.[0]?.odds))"
@@ -402,7 +403,7 @@ onMounted(() => {
 
             <!-- Over/Under -->
               <div v-if="activeTab === tabKeyAt(2)" class="mb-4">
-                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t(siteGameStore.siteGame?.list?.[2]?.item?.[0]?.title ?? '') }}</h3> 
+                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ siteGameStore.siteGame?.list?.[2]?.item?.[0]?.title || $t('matchDetail.markets.overUnder') }}</h3> 
                 <div class="grid grid-cols-3 gap-2">
                   <template v-for="item in siteGameStore.siteGame?.list?.[2]?.item?.[0]?.item" :key="item.id">
 
