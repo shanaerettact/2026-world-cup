@@ -1,13 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { getSiteGame } from '@/services/api/siteGameApi'
+import type { GameDetailData } from '@/schema/siteGameSchema'
+
+
 
 export interface BetSelection {
   id: string
   /** 送 /game/bet 的線別 id（與 id 不同時使用，例如 id 為 slip 複合鍵） */
   betApiId?: string
+  /** 原始 market key（Moneyline / Handicap / O/U / OddEven） */
+  market?: string
   matchId: number
   matchTitle: string
   betType: string
+  /** 與賽事詳情 PlayItem.title 一致（玩法區塊標題） */
+  playTitle?: string
   selection: string
   odds: number
 }
@@ -35,6 +43,11 @@ const MOCK_BET_HISTORY: BetRecord[] = [
 ]
 
 export const useBetSlipStore = defineStore('betSlip', () => {
+  const siteGame = ref<GameDetailData | null>(null)
+  const fetchSiteGame = async (id: number) => {
+    siteGame.value = await getSiteGame(id)
+  }
+
   const selections = ref<BetSelection[]>([])
   const betHistory = ref<BetRecord[]>([...MOCK_BET_HISTORY])
   const stake = ref<number>(100)
@@ -125,6 +138,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
 
   function openConfirmModal() {
     isConfirmModalOpen.value = true
+    isDrawerOpen.value = false
   }
 
   function closeConfirmModal() {
@@ -150,6 +164,8 @@ export const useBetSlipStore = defineStore('betSlip', () => {
 
   return {
     selections,
+    siteGame,
+    fetchSiteGame,
     stake,
     betMode,
     isDrawerOpen,
@@ -173,6 +189,6 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     openConfirmModal,
     closeConfirmModal,
     confirmBet,
-    betHistory
+    betHistory,
   }
 })

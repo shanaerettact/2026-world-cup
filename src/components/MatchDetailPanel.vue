@@ -203,6 +203,7 @@ watch(isOpen, (open) => {
 onMounted(() => {
   if (!match.value?.id) return
   siteGameStore.fetchSiteGame(match.value.id)
+  console.log(activePeriod.value?.escape)
 })
 </script>
 
@@ -435,7 +436,7 @@ onMounted(() => {
               <div class="grid grid-cols-3 gap-2">
                 <template v-for="item in activePeriod?.item?.[0]?.item" :key="item.id">
                   <button
-                    @click="handleOddsClick('O/U', 'over', `${t('common.over')} ${item.title ?? ''}`, playItemOddsNumber(item.odds), item.id, activePeriod?.item?.[0]?.title)"
+                    @click="handleOddsClick('O/U', 'over', `${t('common.over')} ${item.title ?? ''}`, playItemOddsNumber(item.odds), item.id, item.title)"
                     class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                     :class="!hasPlayableOdds(item.odds)
                       ? 'bg-[var(--color-card)] text-[var(--color-muted)] border-[var(--color-border)]'

@@ -85,7 +85,7 @@ watch(() => betSlipStore.isConfirmModalOpen, (open) => {
     <Transition name="fade">
       <div
         v-if="betSlipStore.isConfirmModalOpen"
-        class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60]
+        class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100]
                flex items-center justify-center p-4"
         @click.self="!isProcessing && !isConfirmed && handleClose()"
       >

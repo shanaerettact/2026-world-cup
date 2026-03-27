@@ -1,12 +1,71 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { X, Trash2, CircleHelp } from 'lucide-vue-next'
-import { useBetSlipStore } from '@/stores/betSlipStore'
+import { useBetSlipStore, type BetSelection } from '@/stores/betSlipStore'
+
+/** 獨贏、讓球：顯示 playTitle + selection；大小、單雙：只顯示 selection */
+const COMPACT_MARKETS = new Set(['Moneyline', 'Handicap'])
+function isCompactMarket(s: BetSelection): boolean {
+  if (s.market) return COMPACT_MARKETS.has(s.market)
+  return true
+}
 
 const betSlipStore = useBetSlipStore()
-const { purchaseInsurance } = storeToRefs(betSlipStore)
+/** 與下注額輸入框同一來源（`v-model` / `setStake`） */
+const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
+
+/** 與 MatchDetailPanel `activePeriod`（`list[0]`）一致：`escape === '1'` 時才顯示購買保險 */
+const showPurchaseInsurance = computed(
+  () => betSlipStore.siteGame?.list?.[0]?.escape === '1'
+)
+
+watch(showPurchaseInsurance, (show) => {
+  if (!show) purchaseInsurance.value = false
+})
+
+/** 與 MatchDetailPanel `activePeriod` 相同：`list[0]` */
+const activePeriod = computed(() => betSlipStore.siteGame?.list?.[0] ?? null)
+
+function pctToNumber(s: string | undefined): number {
+  const n = Number(s)
+  return Number.isFinite(n) ? n : 0
+}
+
+const showInsuranceBreakdown = computed(
+  () =>
+    purchaseInsurance.value &&
+    showPurchaseInsurance.value &&
+    activePeriod.value != null
+)
+
+/** 保險費用：下注額（輸入框 stake）× escape_fee% */
+const insuranceFeeAmount = computed(() => {
+  if (!showInsuranceBreakdown.value) return 0
+  const p = pctToNumber(activePeriod.value?.escape_fee)
+  return stake.value * (p / 100)
+})
+
+/** 贏時保險獲利（試算）：下注額 × (賠率 − 1) × escape_win% */
+const insuranceWinProfitAmount = computed(() => {
+  if (!showInsuranceBreakdown.value) return 0
+  const p = pctToNumber(activePeriod.value?.escape_win)
+  const odds = betSlipStore.totalOdds
+  return stake.value * Math.max(0, odds - 1) * (p / 100)
+})
+
+/** 輸時保險退款（試算）：下注額 × escape_lose% */
+const insuranceLoseRefundAmount = computed(() => {
+  if (!showInsuranceBreakdown.value) return 0
+  const p = pctToNumber(activePeriod.value?.escape_lose)
+  return stake.value * (p / 100)
+})
+
+/** 與目前情境對齊的賽事 id（精選開啟詳情 > 投注單選項） */
+const resolvedSiteGameId = computed(() => {
+  return betSlipStore.selections[0]?.matchId ?? null
+})
 const { locale } = useI18n()
 
 const insuranceHelpOpen = ref(false)
@@ -41,16 +100,31 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-const handleStakeChange = (e: Event) => {
-  const value = parseFloat((e.target as HTMLInputElement).value) || 0
-  betSlipStore.setStake(value)
+function handleStakeChange(e: Event) {
+  const raw = (e.target as HTMLInputElement).value
+  const value = parseFloat(raw)
+  betSlipStore.setStake(Number.isFinite(value) ? Math.max(0, value) : 0)
 }
 
-// Lock body scroll when open；關閉抽屜時收合保險說明
+// Lock body scroll when open；關閉抽屜時收合保險說明（若已開確認彈窗則由 ConfirmBetModal 維持鎖捲動）
 watch(() => betSlipStore.isDrawerOpen, (open) => {
-  document.body.style.overflow = open ? 'hidden' : ''
-  if (!open) insuranceHelpOpen.value = false
+  if (open) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    if (!betSlipStore.isConfirmModalOpen) document.body.style.overflow = ''
+    insuranceHelpOpen.value = false
+  }
 })
+
+watch(
+  () => [betSlipStore.isDrawerOpen, resolvedSiteGameId.value] as const,
+  ([open, id]) => {
+    if (open && id != null && id > 0) {
+      betSlipStore.fetchSiteGame(id)
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -101,14 +175,15 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
             </div>
           </div>
 
-          <!-- Selections -->
-          <div class="flex-1 px-4 space-y-3">
+          <!-- Selections（與 MatchDetailPanel handleOddsClick / FeaturedMatchCard 寫入的 payload 一致） -->
+          <div class="flex-1 px-4 space-y-3 overflow-y-auto">
             <div
               v-for="selection in betSlipStore.selections"
               :key="selection.id"
               class="p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] relative group"
             >
               <button
+                type="button"
                 @click="betSlipStore.removeSelection(selection.id)"
                 class="absolute top-2 right-2 p-1 rounded-lg
                        opacity-0 group-hover:opacity-100
@@ -117,18 +192,27 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
                 <X class="w-4 h-4" />
               </button>
               <p class="text-xs text-[var(--color-muted)] mb-1">{{ selection.matchTitle }}</p>
-              <p class="text-sm font-medium text-[var(--color-text)] mb-1">{{ selection.betType }}</p>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-[var(--color-text)]">{{ selection.selection }}</span>
-                <span class="text-sm font-bold text-primary">{{ selection.odds.toFixed(2) }}</span>
-              </div>
+              <template v-if="isCompactMarket(selection)">
+                <p class="text-sm font-medium text-[var(--color-text)] mb-1">{{ selection.playTitle || selection.betType }}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-[var(--color-text)]">{{ selection.selection }}</span>
+                  <span class="text-sm font-bold text-primary">{{ selection.odds.toFixed(2) }}</span>
+                </div>
+              </template>
+              <template v-else>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium text-[var(--color-text)]">{{ selection.selection }}</span>
+                  <span class="text-sm font-bold text-primary">{{ selection.odds.toFixed(2) }}</span>
+                </div>
+              </template>
             </div>
           </div>
 
           <!-- Summary -->
           <div class="p-4 space-y-3">
-            <!-- Purchase insurance -->
+            <!-- Purchase insurance（與賽事詳情 activePeriod.escape === '1' 時顯示） -->
             <div
+              v-if="showPurchaseInsurance"
               class="flex items-center gap-2 p-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]"
             >
               <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer select-none">
@@ -170,7 +254,8 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]">{{ $t('common.currencySymbol') }}</span>
                 <input
                   type="number"
-                  :value="betSlipStore.stake"
+                  min="0"
+                  :value="stake"
                   @input="handleStakeChange"
                   class="w-full py-2.5 pl-[50px] pr-3 rounded-xl bg-[var(--color-bg)] 
                          border border-[var(--color-border)] text-[var(--color-text)]
@@ -203,6 +288,41 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
                   {{ betSlipStore.totalOdds.toFixed(2) }}
                 </span>
               </div>
+              <template v-if="showInsuranceBreakdown">
+                <div class="flex items-start justify-between gap-2 text-sm">
+                  <div class="min-w-0">
+                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
+                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                      {{ $t('betSlip.insurance.feeSub', { rate: activePeriod?.escape_fee ?? '0' }) }}
+                    </p>
+                  </div>
+                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                    {{ formatCurrency(insuranceFeeAmount) }}
+                  </span>
+                </div>
+                <div class="flex items-start justify-between gap-2 text-sm">
+                  <div class="min-w-0">
+                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.winTrialLabel') }}</span>
+                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                      {{ $t('betSlip.insurance.winTrialSub', { rate: activePeriod?.escape_win ?? '0' }) }}
+                    </p>
+                  </div>
+                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                    {{ formatCurrency(insuranceWinProfitAmount) }}
+                  </span>
+                </div>
+                <div class="flex items-start justify-between gap-2 text-sm">
+                  <div class="min-w-0">
+                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.loseTrialLabel') }}</span>
+                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                      {{ $t('betSlip.insurance.loseTrialSub', { rate: activePeriod?.escape_lose ?? '0' }) }}
+                    </p>
+                  </div>
+                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                    {{ formatCurrency(insuranceLoseRefundAmount) }}
+                  </span>
+                </div>
+              </template>
               <div class="flex items-center justify-between">
                 <span class="text-sm text-[var(--color-muted)]">{{ $t('common.potentialPayout') }}</span>
                 <span class="text-xl font-bold text-success">
@@ -213,7 +333,8 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
 
             <!-- Place Bet Button -->
             <button
-              @click="betSlipStore.openConfirmModal"
+              type="button"
+              @click.stop="betSlipStore.openConfirmModal()"
               :disabled="betSlipStore.selectionCount === 0 || betSlipStore.stake <= 0"
               class="w-full py-4 rounded-2xl font-bold text-white
                      bg-gradient-to-r from-primary to-primary-light
