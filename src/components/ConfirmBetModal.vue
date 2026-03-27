@@ -41,6 +41,8 @@ const insuranceLoseRefundAmount = computed(() => {
 })
 const isConfirmed = ref(false)
 const isProcessing = ref(false)
+/** API 失敗時顯示（如 code 2：投注時間尚未開始）；成功時不進入成功畫面 */
+const confirmBetError = ref<string | null>(null)
 
 const riskColor = computed(() => {
   switch (betSlipStore.riskLevel) {
@@ -79,35 +81,39 @@ const formatCurrency = (value: number) => {
 }
 
 const handleConfirm = async () => {
+  confirmBetError.value = null
   isProcessing.value = true
-  
-  const sel = betSlipStore.selections[0]
-  const payload: any = {
-    id: String(sel.betApiId ?? sel.id),
-    amount: betSlipStore.stake,
-    escape: betSlipStore.purchaseInsurance ? '1' : '2',
-  }
-  console.log(payload)
-  await postGameBet(payload)
-  
-  isProcessing.value = false
-  isConfirmed.value = true
-  
-  // Auto close after success
-  setTimeout(() => {
-    betSlipStore.confirmBet()
+  try {
+    const sel = betSlipStore.selections[0]
+    const payload = {
+      id: String(sel.betApiId ?? sel.id),
+      amount: betSlipStore.stake,
+      escape: (betSlipStore.purchaseInsurance ? '1' : '2') as '1' | '2',
+    }
+    await postGameBet(payload)
+    isConfirmed.value = true
+    window.setTimeout(() => {
+      betSlipStore.confirmBet()
+      isConfirmed.value = false
+    }, 2000)
+  } catch (e: unknown) {
     isConfirmed.value = false
-  }, 2000)
+    confirmBetError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    isProcessing.value = false
+  }
 }
 
 const handleClose = () => {
   betSlipStore.closeConfirmModal()
   isConfirmed.value = false
+  confirmBetError.value = null
 }
 
-// Lock body scroll when open
+// Lock body scroll when open；開啟時清除錯誤
 watch(() => betSlipStore.isConfirmModalOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  if (open) confirmBetError.value = null
 })
 </script>
 
@@ -162,6 +168,13 @@ watch(() => betSlipStore.isConfirmModalOpen, (open) => {
 
             <!-- Content -->
             <div class="p-4 space-y-4">
+              <p
+                v-if="confirmBetError"
+                class="text-sm text-danger rounded-xl bg-danger/10 border border-danger/20 px-3 py-2"
+                role="alert"
+              >
+                {{ confirmBetError }}
+              </p>
               <!-- Selections Summary -->
               <div class="p-3 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]">
                 <p class="text-xs text-[var(--color-muted)] mb-2">
