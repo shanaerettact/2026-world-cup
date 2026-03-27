@@ -131,7 +131,8 @@
   "match": {
     "betType": {
       "fullTimeResult": "Full Time Result"
-    }
+    },
+    "kickoffCountdown": "Opening countdown {time}"
   },
   "schedule": {
     "teams": {

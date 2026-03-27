@@ -131,7 +131,8 @@
   "match": {
     "betType": {
       "fullTimeResult": "全場賽果"
-    }
+    },
+    "kickoffCountdown": "開盤倒數 {time}"
   },
   "schedule": {
     "teams": {

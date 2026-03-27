@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronRight, Play, Zap } from 'lucide-vue-next'
 import { useBetSlipStore } from '@/stores/betSlipStore'
@@ -50,17 +50,62 @@ const matchTitle = computed(() => {
   return `${g.team1_title} vs ${g.team2_title}`
 })
 
+/** API 開賽時間 "yyyy-MM-dd HH:mm:ss" */
+function parseStartTimeMs(s: string | undefined): number | null {
+  if (!s?.trim()) return null
+  const ms = Date.parse(s.trim().replace(' ', 'T'))
+  return Number.isNaN(ms) ? null : ms
+}
+
+function formatDurationToKickoff(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const days = Math.floor(total / 86400)
+  const h = Math.floor((total % 86400) / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const sec = total % 60
+  const pad = (n: number) => String(n).padStart(2, '0')
+  if (days >= 1) return `${days}d ${pad(h)}:${pad(m)}:${pad(sec)}`
+  return `${pad(h)}:${pad(m)}:${pad(sec)}`
+}
+
+/** 每秒觸發，供開賽前倒數更新 */
+const countdownTick = ref(0)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  countdownTimer = setInterval(() => {
+    countdownTick.value++
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (countdownTimer != null) clearInterval(countdownTimer)
+})
+
 const formatKickoff = computed(() => {
   const kick = view.value?.game.start_time
-  if (!kick) return ''
-  const date = new Date(kick)
+  if (!kick?.trim()) return ''
+  const startMs = parseStartTimeMs(kick)
+  if (startMs == null) return ''
   return new Intl.DateTimeFormat(locale.value, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)
+  }).format(new Date(startMs))
+})
+
+/** 開賽前顯示倒數；開賽後為空字串 */
+const kickoffCountdownLine = computed(() => {
+  void countdownTick.value
+  const kick = view.value?.game.start_time
+  if (!kick?.trim()) return ''
+  const startMs = parseStartTimeMs(kick)
+  if (startMs == null) return ''
+  const now = Date.now()
+  if (now >= startMs) return ''
+  return t('match.kickoffCountdown', { time: formatDurationToKickoff(startMs - now) })
 })
 
 const odds = computed(() => {
@@ -114,10 +159,6 @@ const openMatchDetail = (scrollToTabs = false) => {
   homeStore.selectGame(v.game, { scrollToTabs })
   siteGameStore.fetchSiteGame(Number(v.game.id))
 }
-onMounted(() => {
-  console.log('openMatchDetail', view.value?.game)
-})
-
 </script>
 
 <template>
@@ -177,7 +218,10 @@ onMounted(() => {
           v-else
           class="text-lg font-bold text-[var(--color-muted)]"
         >{{ $t('common.vs') }}</span>
-        <span class="text-xs text-[var(--color-muted)] mt-1">{{ formatKickoff }}</span>
+        <span class="text-xs text-[var(--color-muted)] mt-1 flex flex-col items-center gap-0.5">
+          <span>{{ formatKickoff }}</span>
+          <span v-if="kickoffCountdownLine" class="text-[10px] text-primary font-medium">{{ kickoffCountdownLine }}</span>
+        </span>
       </div>
 
       <!-- Away Team -->
