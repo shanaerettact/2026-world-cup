@@ -26,17 +26,14 @@ const tabs = computed(() =>
 )
 const activeTab = ref('')
 
-/** 目前選中 tab（tab.key）對應的 list 期別 */
 const activePeriod = computed(() => {
   const list = siteGameStore.siteGame?.list
   if (!list?.length || !activeTab.value) return null
   return list.find((p) => p.id === activeTab.value) ?? null
 })
 
-/** 該期別下的玩法列（PlayItem[]） */
 const activePlayItems = computed(() => activePeriod.value?.item ?? [])
 
-/** 各 tab 位置對應的實際 key */
 const tabKeyAt = (index: number) => tabs.value?.[index]?.key ?? ''
 
 const match = computed(
@@ -203,7 +200,6 @@ watch(isOpen, (open) => {
 onMounted(() => {
   if (!match.value?.id) return
   siteGameStore.fetchSiteGame(match.value.id)
-  console.log(activePeriod.value?.escape)
 })
 </script>
 

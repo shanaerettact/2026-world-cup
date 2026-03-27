@@ -26,12 +26,10 @@ const scrollToBottom = () => {
   })
 }
 
-// Auto scroll on new messages
 watch(() => chatStore.messages.length, () => {
   scrollToBottom()
 })
 
-// Scroll to bottom when chat opens
 watch(() => chatStore.isChatOpen, (open) => {
   if (open) {
     scrollToBottom()

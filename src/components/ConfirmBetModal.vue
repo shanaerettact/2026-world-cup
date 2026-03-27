@@ -10,7 +10,6 @@ const betSlipStore = useBetSlipStore()
 const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
 const { t, locale } = useI18n()
 
-/** 與 BetslipDrawer／MatchDetailPanel `list[0]` 一致 */
 const activePeriod = computed(() => betSlipStore.siteGame?.list?.[0] ?? null)
 const showPurchaseInsurance = computed(
   () => betSlipStore.siteGame?.list?.[0]?.escape === '1'
@@ -41,7 +40,6 @@ const insuranceLoseRefundAmount = computed(() => {
 })
 const isConfirmed = ref(false)
 const isProcessing = ref(false)
-/** API 失敗時顯示（如 code 2：投注時間尚未開始）；成功時不進入成功畫面 */
 const confirmBetError = ref<string | null>(null)
 
 const riskColor = computed(() => {
@@ -110,7 +108,6 @@ const handleClose = () => {
   confirmBetError.value = null
 }
 
-// Lock body scroll when open；開啟時清除錯誤
 watch(() => betSlipStore.isConfirmModalOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
   if (open) confirmBetError.value = null

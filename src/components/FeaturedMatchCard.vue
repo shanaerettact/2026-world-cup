@@ -50,7 +50,6 @@ const matchTitle = computed(() => {
   return `${g.team1_title} vs ${g.team2_title}`
 })
 
-/** API 開賽時間 "yyyy-MM-dd HH:mm:ss" */
 function parseStartTimeMs(s: string | undefined): number | null {
   if (!s?.trim()) return null
   const ms = Date.parse(s.trim().replace(' ', 'T'))
@@ -68,7 +67,6 @@ function formatDurationToKickoff(ms: number): string {
   return `${pad(h)}:${pad(m)}:${pad(sec)}`
 }
 
-/** 每秒觸發，供開賽前倒數更新 */
 const countdownTick = ref(0)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
@@ -96,7 +94,6 @@ const formatKickoff = computed(() => {
   }).format(new Date(startMs))
 })
 
-/** 開賽前顯示倒數；開賽後為空字串 */
 const kickoffCountdownLine = computed(() => {
   void countdownTick.value
   const kick = view.value?.game.start_time
@@ -106,6 +103,17 @@ const kickoffCountdownLine = computed(() => {
   const now = Date.now()
   if (now >= startMs) return ''
   return t('match.kickoffCountdown', { time: formatDurationToKickoff(startMs - now) })
+})
+
+const canInteractWithMarket = computed(() => {
+  void countdownTick.value
+  const g = view.value?.game
+  if (!g) return false
+  const st = g.status?.toLowerCase?.() ?? ''
+  if (st === 'finished' || st === 'end') return false
+  const startMs = parseStartTimeMs(g.start_time)
+  if (startMs == null) return true
+  return Date.now() >= startMs
 })
 
 const odds = computed(() => {
@@ -133,7 +141,7 @@ const formatOdds = (s: string) => {
 
 const handleOddsClick = (oddId: string, odds: string, title: string) => {
   const v = view.value
-  if (!v) return
+  if (!v || !canInteractWithMarket.value) return
   const slipId = getSelectionId(oddId)
   const payload = {
     id: slipId,
@@ -154,7 +162,7 @@ const handleOddsClick = (oddId: string, odds: string, title: string) => {
 
 const openMatchDetail = (scrollToTabs = false) => {
   const v = view.value
-  if (!v) return
+  if (!v || !canInteractWithMarket.value) return
   matchStore.clearSelectedMatch()
   homeStore.selectGame(v.game, { scrollToTabs })
   siteGameStore.fetchSiteGame(Number(v.game.id))
@@ -252,10 +260,12 @@ const openMatchDetail = (scrollToTabs = false) => {
       <button
         v-for="odd in odds"
         :key="odd.id"
+        type="button"
+        :disabled="!canInteractWithMarket"
         @click="handleOddsClick(odd.id, odd.odds, odd.title)"
         class="relative py-3 px-2 rounded-xl font-semibold text-center
-               transition-all duration-200 active:scale-95
-               border-2"
+               transition-all duration-200 border-2
+               disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
         :class="betSlipStore.isSelected(getSelectionId(odd.id))
           ? 'bg-primary text-white border-primary shadow-lg shadow-primary/30'
           : 'bg-[var(--color-bg)] text-[var(--color-text)] border-[var(--color-border)] hover:border-primary/50'"
@@ -271,22 +281,28 @@ const openMatchDetail = (scrollToTabs = false) => {
     <!-- Action Buttons -->
     <div class="flex gap-2">
       <button
+        type="button"
+        :disabled="!canInteractWithMarket"
         @click="openMatchDetail(true)"
         class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4
                rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]
                text-sm font-medium text-[var(--color-text)]
-               transition-all duration-200 active:scale-95 hover:border-primary/50"
+               transition-all duration-200 hover:border-primary/50
+               disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
       >
         <span>{{ $t('common.moreOdds') }}</span>
         <ChevronRight class="w-4 h-4" />
       </button>
       <button
+        type="button"
+        :disabled="!canInteractWithMarket"
         @click="openMatchDetail()"
         class="flex items-center justify-center gap-2 py-2.5 px-4
                rounded-xl bg-gradient-to-r from-primary to-primary-light
                text-sm font-medium text-white
-               transition-all duration-200 active:scale-95
-               shadow-lg shadow-primary/20"
+               transition-all duration-200
+               shadow-lg shadow-primary/20
+               disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
       >
         <Play class="w-4 h-4 fill-white" />
         <span>{{ $t('common.watchLive') }}</span>

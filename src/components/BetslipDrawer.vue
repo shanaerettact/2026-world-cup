@@ -5,7 +5,6 @@ import { storeToRefs } from 'pinia'
 import { X, Trash2, CircleHelp } from 'lucide-vue-next'
 import { useBetSlipStore, type BetSelection } from '@/stores/betSlipStore'
 
-/** 獨贏、讓球：顯示 playTitle + selection；大小、單雙：只顯示 selection */
 const COMPACT_MARKETS = new Set(['Moneyline', 'Handicap'])
 function isCompactMarket(s: BetSelection): boolean {
   if (s.market) return COMPACT_MARKETS.has(s.market)
@@ -13,10 +12,8 @@ function isCompactMarket(s: BetSelection): boolean {
 }
 
 const betSlipStore = useBetSlipStore()
-/** 與下注額輸入框同一來源（`v-model` / `setStake`） */
 const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
 
-/** 與 MatchDetailPanel `activePeriod`（`list[0]`）一致：`escape === '1'` 時才顯示購買保險 */
 const showPurchaseInsurance = computed(
   () => betSlipStore.siteGame?.list?.[0]?.escape === '1'
 )
@@ -25,7 +22,6 @@ watch(showPurchaseInsurance, (show) => {
   if (!show) purchaseInsurance.value = false
 })
 
-/** 與 MatchDetailPanel `activePeriod` 相同：`list[0]` */
 const activePeriod = computed(() => betSlipStore.siteGame?.list?.[0] ?? null)
 
 function pctToNumber(s: string | undefined): number {
@@ -40,14 +36,12 @@ const showInsuranceBreakdown = computed(
     activePeriod.value != null
 )
 
-/** 保險費用：下注額（輸入框 stake）× escape_fee% */
 const insuranceFeeAmount = computed(() => {
   if (!showInsuranceBreakdown.value) return 0
   const p = pctToNumber(activePeriod.value?.escape_fee)
   return stake.value * (p / 100)
 })
 
-/** 贏時保險獲利（試算）：下注額 × (賠率 − 1) × escape_win% */
 const insuranceWinProfitAmount = computed(() => {
   if (!showInsuranceBreakdown.value) return 0
   const p = pctToNumber(activePeriod.value?.escape_win)
@@ -55,14 +49,12 @@ const insuranceWinProfitAmount = computed(() => {
   return stake.value * Math.max(0, odds - 1) * (p / 100)
 })
 
-/** 輸時保險退款（試算）：下注額 × escape_lose% */
 const insuranceLoseRefundAmount = computed(() => {
   if (!showInsuranceBreakdown.value) return 0
   const p = pctToNumber(activePeriod.value?.escape_lose)
   return stake.value * (p / 100)
 })
 
-/** 與目前情境對齊的賽事 id（精選開啟詳情 > 投注單選項） */
 const resolvedSiteGameId = computed(() => {
   return betSlipStore.selections[0]?.matchId ?? null
 })
@@ -106,7 +98,6 @@ function handleStakeChange(e: Event) {
   betSlipStore.setStake(Number.isFinite(value) ? Math.max(0, value) : 0)
 }
 
-// Lock body scroll when open；關閉抽屜時收合保險說明（若已開確認彈窗則由 ConfirmBetModal 維持鎖捲動）
 watch(() => betSlipStore.isDrawerOpen, (open) => {
   if (open) {
     document.body.style.overflow = 'hidden'
