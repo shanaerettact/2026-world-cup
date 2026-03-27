@@ -8,6 +8,7 @@ import { useBetSlipStore } from '@/stores/betSlipStore'
 import { useChatStore } from '@/stores/chatStore'
 import { useSiteGameStore } from '@/stores/siteGameStore'
 import type { GamePeriod } from '@/schema/siteGameSchema'
+import type { BetSelection } from '@/stores/betSlipStore'
 
 const matchStore = useMatchStore()
 const homeStore = useHomeStore()
@@ -23,8 +24,17 @@ const tabs = computed(() =>
     item: item.item,
   }))
 )
-
 const activeTab = ref('')
+
+/** 目前選中 tab（tab.key）對應的 list 期別 */
+const activePeriod = computed(() => {
+  const list = siteGameStore.siteGame?.list
+  if (!list?.length || !activeTab.value) return null
+  return list.find((p) => p.id === activeTab.value) ?? null
+})
+
+/** 該期別下的玩法列（PlayItem[]） */
+const activePlayItems = computed(() => activePeriod.value?.item ?? [])
 
 /** 各 tab 位置對應的實際 key */
 const tabKeyAt = (index: number) => tabs.value?.[index]?.key ?? ''
@@ -54,14 +64,12 @@ const formatKickoff = computed(() => {
   return date
 })
 
-/** API 格式 "yyyy-MM-dd HH:mm:ss"，依本地時區比對 */
 function parseApiDateTime(s: string | undefined): number | null {
   if (!s?.trim()) return null
   const ms = Date.parse(s.trim().replace(' ', 'T'))
   return Number.isNaN(ms) ? null : ms
 }
 
-/** 依開賽／結束時間：未開賽、進行中、已結束 */
 const matchTimePhase = computed<'notStarted' | 'inProgress' | 'ended' | null>(() => {
   const g = siteGameStore.siteGame?.game
   if (!g) return null
@@ -88,8 +96,8 @@ const matchPhaseClass = computed(() => {
   if (p === 'ended') return 'text-[var(--color-muted)]'
   return 'text-[var(--color-text)]'
 })
-const getSelectionId = (market: string, type: string) => 
-  `${match.value?.id}-${market}-${type}`
+const getSelectionId = (market: string, type: string, betApiId?: string) => 
+  `${match.value?.id}-${market}-${type}${betApiId ? `-${betApiId}` : ''}`
 
 function formatPlayItemOdds(odds: string | undefined): string {
   if (odds == null || odds === '') return '-'
@@ -113,16 +121,25 @@ const marketLabel = (market: string) => {
   }
 }
 
-const handleOddsClick = (market: string, type: string, label: string, odds: number) => {
+const handleOddsClick = (
+  market: string,
+  type: string,
+  label: string,
+  odds: number,
+  betApiId?: string,
+  playTitle?: string
+) => {
   if (!match.value) return
-  const id = getSelectionId(market, type)
-  const payload = {
+  const id = getSelectionId(market, type, betApiId)
+  const payload: BetSelection = {
     id,
     matchId: match.value.id,
     matchTitle: matchTitle.value,
     betType: marketLabel(market),
     selection: label,
-    odds
+    odds,
+    ...(betApiId != null && betApiId !== '' ? { betApiId } : {}),
+    ...(playTitle != null && playTitle !== '' ? { playTitle } : {}),
   }
   if (betSlipStore.isSelected(id)) {
     betSlipStore.removeSelection(id)
@@ -307,53 +324,49 @@ onMounted(() => {
           <!-- Odds Table -->
           <div class="mt-4 mx-4 mb-6">
             <!-- Moneyline -->
-            <template v-for="item in siteGameStore.siteGame?.list?.[0]?.item" :key="item.id">
+            <template v-for="item in activePlayItems" :key="item.id">
               <div v-if="activeTab === tabKeyAt(0)" class="mb-4">
                 <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ item.title }}</h3>
-                <div 
-                class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-3 gap-2">
                   <button
-                    @click="handleOddsClick('Moneyline', 'home', homeTeamName, match.odds.home)"
-                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                          active:scale-95 border-2"
-                    :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'home'))
-                      ? 'bg-primary text-white border-primary'
+                    @click="handleOddsClick('Moneyline', 'home', homeTeamName, playItemOddsNumber(item.item?.[0]?.odds), item.item?.[0]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'home', item.item?.[0]?.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
                       : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
                   >
-                    <span class="text-xs text-[var(--color-muted)] block"
-                          :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'home')) ? 'text-white/70' : ''">
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'home', item.item?.[0]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
                       {{ item.item?.[0]?.title }}
                     </span>
                     <span>{{ formatPlayItemOdds(item.item?.[0]?.odds) }}</span>
                   </button>
                   <button
-                    @click="handleOddsClick('Moneyline', 'away', awayTeamName, match.odds.away)"
-                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                          border-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                    @click="handleOddsClick('Moneyline', 'away', awayTeamName, playItemOddsNumber(item.item?.[2]?.odds), item.item?.[2]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     :class="item.item?.[2]?.odds == null
                       ? 'bg-[var(--color-card)] text-[var(--color-muted)] border-[var(--color-border)]'
-                      : betSlipStore.isSelected(getSelectionId('Moneyline', 'away'))
+                      : betSlipStore.isSelected(getSelectionId('Moneyline', 'away', item.item?.[2]?.id))
                         ? 'bg-primary text-white border-primary active:scale-95'
-                        : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)] active:scale-95'"
+                        : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
                     :disabled="item.item?.[2]?.odds == null"
                   >
-                    <span class="text-xs text-[var(--color-muted)] block"
-                          :class="item.item?.[2]?.odds != null && betSlipStore.isSelected(getSelectionId('Moneyline', 'away')) ? 'text-white/70' : ''">
+                    <span class="text-xs block"
+                          :class="item.item?.[2]?.odds != null && betSlipStore.isSelected(getSelectionId('Moneyline', 'away', item.item?.[2]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
                       {{ item.item?.[2]?.title }}
                     </span>
                     <span>{{ formatPlayItemOdds(item.item?.[2]?.odds) }}</span>
                   </button>
 
                   <button
-                    @click="handleOddsClick('Moneyline', 'draw', t('common.draw'), match.odds.draw)"
-                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                          active:scale-95 border-2"
-                    :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'draw'))
-                      ? 'bg-primary text-white border-primary'
+                    @click="handleOddsClick('Moneyline', 'draw', t('common.draw'), playItemOddsNumber(item.item?.[1]?.odds), item.item?.[1]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'draw', item.item?.[1]?.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
                       : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
                   >
-                    <span class="text-xs text-[var(--color-muted)] block"
-                          :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'draw')) ? 'text-white/70' : ''">
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('Moneyline', 'draw', item.item?.[1]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
                       {{ item.item?.[1]?.title }}
                     </span>
                     <span>{{ formatPlayItemOdds(item.item?.[1]?.odds) }}</span>
@@ -363,102 +376,98 @@ onMounted(() => {
             </template>
 
             <!-- Handicap -->
-            <template v-for="item in siteGameStore.siteGame?.list?.[1]?.item" :key="item.id">
+            <template v-for="item in activePlayItems" :key="item.id">
               <div v-if="activeTab === tabKeyAt(1)" class="mb-4">
-                  <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ item.title }}</h3>
+                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ item.title }}</h3>
                 <div class="grid grid-cols-2 gap-2">
                   <button
-                    @click="handleOddsClick('Handicap', 'home', `${homeTeamName} ${item.item?.[0]?.draw ?? ''}`, playItemOddsNumber(item.item?.[0]?.odds))"
-                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                          active:scale-95 border-2"
-                    :class="betSlipStore.isSelected(getSelectionId('Handicap', 'home'))
-                      ? 'bg-primary text-white border-primary'
+                    @click="handleOddsClick('Handicap', 'home', `${homeTeamName} ${item.item?.[0]?.draw ?? ''}`, playItemOddsNumber(item.item?.[0]?.odds), item.item?.[0]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('Handicap', 'home', item.item?.[0]?.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
                       : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
                   >
-                    <span class="text-xs text-[var(--color-muted)] block"
-                          :class="betSlipStore.isSelected(getSelectionId('Handicap', 'home')) ? 'text-white/70' : ''">
-                      {{ item.item?.[0]?.title }} 
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('Handicap', 'home', item.item?.[0]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
+                      {{ item.item?.[0]?.title }}
                       <template v-if="item.item?.[0]?.draw">({{ item.item?.[0]?.draw }})</template>
                     </span>
                     <span>{{ formatPlayItemOdds(item.item?.[0]?.odds) }}</span>
                   </button>
                   <button
-                  @click="handleOddsClick('Handicap', 'away', `${awayTeamName} ${item.item?.[1]?.draw ?? ''}`, playItemOddsNumber(item.item?.[1]?.odds))"
-                  class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                         active:scale-95 border-2"
-                  :class="betSlipStore.isSelected(getSelectionId('Handicap', 'away'))
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
-                >
-                  <span class="text-xs text-[var(--color-muted)] block"
-                        :class="betSlipStore.isSelected(getSelectionId('Handicap', 'away')) ? 'text-white/70' : ''">
-                    {{ item.item?.[1]?.title }} 
-                    <template v-if="item.item?.[1]?.draw">({{ item.item?.[1]?.draw }})</template>
-                  </span>
-                  <span>{{ formatPlayItemOdds(item.item?.[1]?.odds) }}</span>
-                </button>
+                    @click="handleOddsClick('Handicap', 'away', `${awayTeamName} ${item.item?.[1]?.draw ?? ''}`, playItemOddsNumber(item.item?.[1]?.odds), item.item?.[1]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('Handicap', 'away', item.item?.[1]?.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
+                      : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
+                  >
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('Handicap', 'away', item.item?.[1]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
+                      {{ item.item?.[1]?.title }}
+                      <template v-if="item.item?.[1]?.draw">({{ item.item?.[1]?.draw }})</template>
+                    </span>
+                    <span>{{ formatPlayItemOdds(item.item?.[1]?.odds) }}</span>
+                  </button>
                 </div>
               </div>
             </template>
 
             <!-- Over/Under -->
-              <div v-if="activeTab === tabKeyAt(2)" class="mb-4">
-                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ siteGameStore.siteGame?.list?.[2]?.item?.[0]?.title || $t('matchDetail.markets.overUnder') }}</h3> 
-                <div class="grid grid-cols-3 gap-2">
-                  <template v-for="item in siteGameStore.siteGame?.list?.[2]?.item?.[0]?.item" :key="item.id">
-
+            <div v-if="activeTab === tabKeyAt(2)" class="mb-4">
+              <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ activePeriod?.item?.[0]?.title || $t('matchDetail.markets.overUnder') }}</h3>
+              <div class="grid grid-cols-3 gap-2">
+                <template v-for="item in activePeriod?.item?.[0]?.item" :key="item.id">
                   <button
-                    @click="handleOddsClick('O/U', 'over', `${t('common.over')} ${item.title ?? ''}`, playItemOddsNumber(item.odds))"
-                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                          active:scale-95 border-2"
-                    :class="betSlipStore.isSelected(getSelectionId('O/U', 'over'))
-                      ? 'bg-primary text-white border-primary'
+                    @click="handleOddsClick('O/U', 'over', `${t('common.over')} ${item.title ?? ''}`, playItemOddsNumber(item.odds), item.id, activePeriod?.item?.[0]?.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('O/U', 'over', item.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
                       : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
                   >
-                    <span class="text-xs text-[var(--color-muted)] block"
-                          :class="betSlipStore.isSelected(getSelectionId('O/U', 'over')) ? 'text-white/70' : ''">
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('O/U', 'over', item.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
                       {{ item.title }}
                     </span>
                     <span>{{ formatPlayItemOdds(item.odds) }}</span>
                   </button>
-                  </template>
-                </div>
-              </div>
-
-            <!-- Odd/Even -->
-            <div v-if="activeTab === tabKeyAt(3) && match.markets">
-              <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ $t('matchDetail.markets.oddEven') }}</h3>
-              <div class="grid grid-cols-2 gap-2">
-                <button
-                  @click="handleOddsClick('OddEven', 'odd', t('common.odd'), match.markets.oddEven.odd)"
-                  class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                         active:scale-95 border-2"
-                  :class="betSlipStore.isSelected(getSelectionId('OddEven', 'odd'))
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
-                >
-                  <span class="text-xs text-[var(--color-muted)] block"
-                        :class="betSlipStore.isSelected(getSelectionId('OddEven', 'odd')) ? 'text-white/70' : ''">
-                    {{ $t('common.odd') }}
-                  </span>
-                  <span>{{ match.markets.oddEven.odd.toFixed(2) }}</span>
-                </button>
-                <button
-                  @click="handleOddsClick('OddEven', 'even', t('common.even'), match.markets.oddEven.even)"
-                  class="py-3 rounded-xl font-semibold text-center transition-all duration-200 
-                         active:scale-95 border-2"
-                  :class="betSlipStore.isSelected(getSelectionId('OddEven', 'even'))
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
-                >
-                  <span class="text-xs text-[var(--color-muted)] block"
-                        :class="betSlipStore.isSelected(getSelectionId('OddEven', 'even')) ? 'text-white/70' : ''">
-                    {{ $t('common.even') }}
-                  </span>
-                  <span>{{ match.markets.oddEven.even.toFixed(2) }}</span>
-                </button>
+                </template>
               </div>
             </div>
+
+            <!-- Odd/Even -->
+            <template v-for="item in activePlayItems" :key="item.id">
+              <div v-if="activeTab === tabKeyAt(3)" class="mb-4">
+                <h3 class="text-sm font-semibold text-[var(--color-text)] mb-2">{{ item.title || $t('matchDetail.markets.oddEven') }}</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    @click="handleOddsClick('OddEven', 'odd', item.item?.[0]?.title ?? t('common.odd'), playItemOddsNumber(item.item?.[0]?.odds), item.item?.[0]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('OddEven', 'odd', item.item?.[0]?.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
+                      : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
+                  >
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('OddEven', 'odd', item.item?.[0]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
+                      {{ item.item?.[0]?.title || $t('common.odd') }}
+                    </span>
+                    <span>{{ formatPlayItemOdds(item.item?.[0]?.odds) }}</span>
+                  </button>
+                  <button
+                    @click="handleOddsClick('OddEven', 'even', item.item?.[1]?.title ?? t('common.even'), playItemOddsNumber(item.item?.[1]?.odds), item.item?.[1]?.id, item.title)"
+                    class="py-3 rounded-xl font-semibold text-center transition-all duration-200 border-2"
+                    :class="betSlipStore.isSelected(getSelectionId('OddEven', 'even', item.item?.[1]?.id))
+                      ? 'bg-primary text-white border-primary active:scale-95'
+                      : 'bg-[var(--color-card)] text-[var(--color-text)] border-[var(--color-border)]'"
+                  >
+                    <span class="text-xs block"
+                          :class="betSlipStore.isSelected(getSelectionId('OddEven', 'even', item.item?.[1]?.id)) ? 'text-white/70' : 'text-[var(--color-muted)]'">
+                      {{ item.item?.[1]?.title || $t('common.even') }}
+                    </span>
+                    <span>{{ formatPlayItemOdds(item.item?.[1]?.odds) }}</span>
+                  </button>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
 
