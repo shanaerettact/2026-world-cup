@@ -1,12 +1,44 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import { X, Check, AlertTriangle, TrendingUp, Shield } from 'lucide-vue-next'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 import { postGameBet } from '@/services/api/gameBetApi'
 
 const betSlipStore = useBetSlipStore()
+const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
 const { t, locale } = useI18n()
+
+/** 與 BetslipDrawer／MatchDetailPanel `list[0]` 一致 */
+const activePeriod = computed(() => betSlipStore.siteGame?.list?.[0] ?? null)
+const showPurchaseInsurance = computed(
+  () => betSlipStore.siteGame?.list?.[0]?.escape === '1'
+)
+function pctToNumber(s: string | undefined): number {
+  const n = Number(s)
+  return Number.isFinite(n) ? n : 0
+}
+const showInsuranceBreakdown = computed(
+  () =>
+    purchaseInsurance.value &&
+    showPurchaseInsurance.value &&
+    activePeriod.value != null
+)
+const insuranceFeeAmount = computed(() => {
+  if (!showInsuranceBreakdown.value) return 0
+  return stake.value * (pctToNumber(activePeriod.value?.escape_fee) / 100)
+})
+const insuranceWinProfitAmount = computed(() => {
+  if (!showInsuranceBreakdown.value) return 0
+  const p = pctToNumber(activePeriod.value?.escape_win)
+  const odds = betSlipStore.totalOdds
+  return stake.value * Math.max(0, odds - 1) * (p / 100)
+})
+const insuranceLoseRefundAmount = computed(() => {
+  if (!showInsuranceBreakdown.value) return 0
+  return stake.value * (pctToNumber(activePeriod.value?.escape_lose) / 100)
+})
 const isConfirmed = ref(false)
 const isProcessing = ref(false)
 
@@ -53,7 +85,7 @@ const handleConfirm = async () => {
   const payload: any = {
     id: String(sel.betApiId ?? sel.id),
     amount: betSlipStore.stake,
-    escape: '1'
+    escape: betSlipStore.purchaseInsurance ? '1' : '2',
   }
   console.log(payload)
   await postGameBet(payload)
@@ -169,6 +201,41 @@ watch(() => betSlipStore.isConfirmModalOpen, (open) => {
                     {{ betSlipStore.totalOdds.toFixed(2) }}
                   </span>
                 </div>
+                <template v-if="showInsuranceBreakdown">
+                  <div class="flex items-start justify-between gap-2 text-sm">
+                    <div class="min-w-0">
+                      <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
+                      <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                        {{ $t('betSlip.insurance.feeSub', { rate: activePeriod?.escape_fee ?? '0' }) }}
+                      </p>
+                    </div>
+                    <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                      {{ formatCurrency(insuranceFeeAmount) }}
+                    </span>
+                  </div>
+                  <div class="flex items-start justify-between gap-2 text-sm">
+                    <div class="min-w-0">
+                      <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.winTrialLabel') }}</span>
+                      <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                        {{ $t('betSlip.insurance.winTrialSub', { rate: activePeriod?.escape_win ?? '0' }) }}
+                      </p>
+                    </div>
+                    <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                      {{ formatCurrency(insuranceWinProfitAmount) }}
+                    </span>
+                  </div>
+                  <div class="flex items-start justify-between gap-2 text-sm">
+                    <div class="min-w-0">
+                      <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.loseTrialLabel') }}</span>
+                      <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                        {{ $t('betSlip.insurance.loseTrialSub', { rate: activePeriod?.escape_lose ?? '0' }) }}
+                      </p>
+                    </div>
+                    <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                      {{ formatCurrency(insuranceLoseRefundAmount) }}
+                    </span>
+                  </div>
+                </template>
                 <div class="flex items-center justify-between pt-2 border-t border-[var(--color-border)]">
                   <span class="text-sm text-[var(--color-muted)]">{{ $t('common.potentialPayout') }}</span>
                   <span class="text-xl font-bold text-success">
