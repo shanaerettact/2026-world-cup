@@ -2,7 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { X, Trash2, CircleHelp } from 'lucide-vue-next'
+import { X, CircleHelp } from 'lucide-vue-next'
 import { useBetSlipStore, type BetSelection } from '@/stores/betSlipStore'
 
 const COMPACT_MARKETS = new Set(['Moneyline', 'Handicap'])
@@ -150,20 +150,13 @@ watch(
                 {{ betSlipStore.selectionCount }}
               </span>
             </h2>
-            <div class="flex items-center gap-2">
-              <button
-                @click="betSlipStore.clearSelections"
-                class="p-2 rounded-lg hover:bg-danger/10 text-danger transition-colors"
-              >
-                <Trash2 class="w-5 h-5" />
-              </button>
-              <button
-                @click="betSlipStore.closeDrawer"
-                class="p-2 rounded-lg hover:bg-[var(--color-bg)] transition-colors"
-              >
-                <X class="w-5 h-5 text-[var(--color-muted)]" />
-              </button>
-            </div>
+            <button
+              type="button"
+              @click="betSlipStore.clearSelections"
+              class="p-2 rounded-lg hover:bg-[var(--color-bg)] transition-colors"
+            >
+              <X class="w-5 h-5 text-[var(--color-muted)]" />
+            </button>
           </div>
 
           <!-- Selections（與 MatchDetailPanel handleOddsClick / FeaturedMatchCard 寫入的 payload 一致） -->
