@@ -200,6 +200,9 @@
     "added": "Added",
     "placingBet": "Placing Bet...",
     "placeBetCta": "Place Bet — {section}",
+    "openCountdownLabel": "Opens in",
+    "marketOpen": "Open",
+    "marketClosed": "Closed",
     "sections": {
       "moneyline": {
         "badge": "Most Popular",

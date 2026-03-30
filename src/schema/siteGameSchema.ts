@@ -16,9 +16,9 @@ export const OddsItemSchema = z.object({
 ----------------------------------- */
 export const PlayItemSchema = z.object({
   id: z.string(),
-  class_id: z.string(),
+  class_id: z.coerce.string(),
   title: z.string(),
-  type: z.string(),
+  type: z.coerce.string(),
   item: z.array(OddsItemSchema), // 多個賠率項目
 });
 

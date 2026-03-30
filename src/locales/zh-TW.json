@@ -200,6 +200,9 @@
     "added": "已加入",
     "placingBet": "下注中…",
     "placeBetCta": "下注 — {section}",
+    "openCountdownLabel": "開盤倒數",
+    "marketOpen": "已開盤",
+    "marketClosed": "已封盤",
     "sections": {
       "moneyline": {
         "badge": "最熱門",
