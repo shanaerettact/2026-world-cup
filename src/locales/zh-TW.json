@@ -203,6 +203,7 @@
     "openCountdownLabel": "開盤倒數",
     "marketOpen": "已開盤",
     "marketClosed": "已封盤",
+    "championBetType": "冠軍賽",
     "sections": {
       "moneyline": {
         "badge": "最熱門",

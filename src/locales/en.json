@@ -203,6 +203,7 @@
     "openCountdownLabel": "Opens in",
     "marketOpen": "Open",
     "marketClosed": "Closed",
+    "championBetType": "Outright",
     "sections": {
       "moneyline": {
         "badge": "Most Popular",

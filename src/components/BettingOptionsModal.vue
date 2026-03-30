@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X, TrendingUp, Star, Zap, Target, ChevronRight, ArrowUpRight } from 'lucide-vue-next'
+import { X, TrendingUp, Star, Zap, Target, ArrowUpRight } from 'lucide-vue-next'
 import { useBettingModalStore } from '@/stores/bettingModalStore'
 import { useChampionListStore } from '@/stores/championListStore'
+import { useChampionDetailStore } from '@/stores/championDetailStore'
+import { useBetSlipStore } from '@/stores/betSlipStore'
+import type { BetSelection } from '@/stores/betSlipStore'
+import type { ChampionOddsItem } from '@/schema/championListSchema'
 
 const { t } = useI18n()
 const store = useBettingModalStore()
+const betSlipStore = useBetSlipStore()
+const championDetailStore = useChampionDetailStore()
 const placingBetId = ref<string | null>(null)
 const championListStore = useChampionListStore()
 
@@ -105,10 +111,46 @@ const sections = computed(() =>
   }),
 )
 
-function handlePlaceBet(sectionId: string, key: string) {
-  const id = `${sectionId}-${key}`
-  placingBetId.value = id
-  setTimeout(() => { placingBetId.value = null }, 1400)
+function championNumericMatchId(championId: string): number {
+  const n = Number(championId)
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0
+}
+
+function championOddToBetSelection(
+  champion: { id: string; title: string },
+  odd: ChampionOddsItem,
+  apiGame?: { title: string },
+): BetSelection {
+  const slipId = `champion-${champion.id}-${odd.id}`
+  const o = Number(odd.odds)
+  return {
+    id: slipId,
+    betApiId: odd.id,
+    matchId: championNumericMatchId(champion.id),
+    market: 'Champion',
+    matchTitle: apiGame?.title ?? champion.title,
+    betType: t('bettingOptionsModal.championBetType'),
+    selection: odd.title,
+    odds: Number.isFinite(o) ? o : 0,
+  }
+}
+
+async function handleChampionOddClick(champion: { id: string; title: string }, odd: ChampionOddsItem) {
+  placingBetId.value = `${champion.id}-${odd.id}`
+  try {
+    await championDetailStore.fetchChampionDetail(champion.id)
+    const data = championDetailStore.championDetail
+    if (!data) return
+    const oddResolved = data.list.find((o) => o.id === odd.id) ?? odd
+    betSlipStore.addSelection(championOddToBetSelection(champion, oddResolved, data.game), {
+      championGameData: data,
+    })
+    store.close()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    setTimeout(() => { placingBetId.value = null }, 1400)
+  }
 }
 
 function parseStartTimeMs(s: string | undefined): number | null {
@@ -138,14 +180,6 @@ function championOpenCountdown(startTime: string): string {
   const diff = startMs - Date.now()
   if (diff <= 0) return t('bettingOptionsModal.marketOpen')
   return formatDurationToOpen(diff)
-}
-
-function championEndDisplay(endTime: string): string {
-  void countdownTick.value
-  const endMs = parseStartTimeMs(endTime)
-  if (endMs == null) return endTime?.trim() ? endTime : '—'
-  if (endMs < Date.now()) return t('bettingOptionsModal.marketClosed')
-  return endTime
 }
 
 watch(
@@ -307,7 +341,7 @@ onMounted(() => {
                       </p>
                     </div>
                     <button
-                      @click="handlePlaceBet(champion.id, odd.id)"
+                      @click="handleChampionOddClick(champion, odd)"
                       class="shrink-0 text-sm font-bold px-3 py-1.5 rounded-lg
                              border border-[var(--color-border)] transition-all active:scale-95"
                       style="background: var(--color-bg)"
@@ -332,7 +366,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Primary CTA -->
-                <button
+                <!-- <button
                   @click="handlePlaceBet(champion.id, 'cta')"
                   class="w-full py-3 rounded-xl font-bold text-sm text-white
                          transition-all duration-200 active:scale-[0.97] flex items-center
@@ -354,7 +388,7 @@ onMounted(() => {
                       <ChevronRight class="w-4 h-4" />
                     </span>
                   </Transition>
-                </button>
+                </button> -->
               </div>
             </article>
 

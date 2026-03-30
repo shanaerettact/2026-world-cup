@@ -58,6 +58,8 @@ const insuranceLoseRefundAmount = computed(() => {
 const resolvedSiteGameId = computed(() => {
   return betSlipStore.selections[0]?.matchId ?? null
 })
+
+const firstSelectionMarket = computed(() => betSlipStore.selections[0]?.market)
 const { locale } = useI18n()
 
 const insuranceHelpOpen = ref(false)
@@ -108,9 +110,10 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
 })
 
 watch(
-  () => [betSlipStore.isDrawerOpen, resolvedSiteGameId.value] as const,
-  ([open, id]) => {
-    if (open && id != null && id > 0) {
+  () =>
+    [betSlipStore.isDrawerOpen, resolvedSiteGameId.value, firstSelectionMarket.value] as const,
+  ([open, id, market]) => {
+    if (open && id != null && id > 0 && market !== 'Champion') {
       betSlipStore.fetchSiteGame(id)
     }
   },
@@ -157,6 +160,21 @@ watch(
             >
               <X class="w-5 h-5 text-[var(--color-muted)]" />
             </button>
+          </div>
+
+          <!-- 冠軍賽：/site/champion 回傳資料 -->
+          <div
+            v-if="betSlipStore.championGameData"
+            class="mx-4 mb-2 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]"
+          >
+            <p class="text-sm font-semibold text-[var(--color-text)] leading-snug">
+              {{ betSlipStore.championGameData.game.title }}
+            </p>
+            <p class="text-xs text-[var(--color-muted)] mt-1 tabular-nums">
+              {{ betSlipStore.championGameData.game.start_time }}
+              <span class="mx-1 opacity-60">—</span>
+              {{ betSlipStore.championGameData.game.end_time }}
+            </p>
           </div>
 
           <!-- Selections（與 MatchDetailPanel handleOddsClick / FeaturedMatchCard 寫入的 payload 一致） -->

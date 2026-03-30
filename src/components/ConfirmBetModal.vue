@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import { X, Check, AlertTriangle, TrendingUp, Shield } from 'lucide-vue-next'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 import { postGameBet } from '@/services/api/gameBetApi'
+import { postBetChampion } from '@/services/api/betChampionApi'
 
 const betSlipStore = useBetSlipStore()
 const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
@@ -83,12 +84,17 @@ const handleConfirm = async () => {
   isProcessing.value = true
   try {
     const sel = betSlipStore.selections[0]
-    const payload = {
-      id: String(sel.betApiId ?? sel.id),
-      amount: betSlipStore.stake,
-      escape: (betSlipStore.purchaseInsurance ? '1' : '2') as '1' | '2',
+    if (betSlipStore.championGameData != null) {
+      const lineId = String(sel.betApiId ?? sel.id)
+      await postBetChampion(lineId, betSlipStore.stake)
+    } else {
+      const payload = {
+        id: String(sel.betApiId ?? sel.id),
+        amount: betSlipStore.stake,
+        escape: (betSlipStore.purchaseInsurance ? '1' : '2') as '1' | '2',
+      }
+      await postGameBet(payload)
     }
-    await postGameBet(payload)
     isConfirmed.value = true
     window.setTimeout(() => {
       betSlipStore.confirmBet()

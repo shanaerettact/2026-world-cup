@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getSiteGame } from '@/services/api/siteGameApi'
 import type { GameDetailData } from '@/schema/siteGameSchema'
+import type { ChampionGameData } from '@/schema/championDetailSchema'
 
 
 
@@ -48,6 +49,9 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     siteGame.value = await getSiteGame(id)
   }
 
+  /** 冠軍賽：由 /site/champion 回傳，供 BetslipDrawer 顯示 */
+  const championGameData = ref<ChampionGameData | null>(null)
+
   const selections = ref<BetSelection[]>([])
   const betHistory = ref<BetRecord[]>([...MOCK_BET_HISTORY])
   const stake = ref<number>(100)
@@ -74,10 +78,19 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   const selectionCount = computed(() => selections.value.length)
 
   /** 投注單只保留一筆：新選項會取代既有選項 */
-  function addSelection(selection: BetSelection) {
+  function addSelection(
+    selection: BetSelection,
+    options?: { championGameData?: ChampionGameData | null },
+  ) {
     const exists = selections.value.some((s) => s.id === selection.id)
     if (exists) return
     selections.value = [selection]
+    if (selection.market === 'Champion' && options?.championGameData != null) {
+      championGameData.value = options.championGameData
+      siteGame.value = null
+    } else {
+      championGameData.value = null
+    }
     if (!isDrawerOpen.value) {
       isDrawerOpen.value = true
     }
@@ -87,6 +100,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     selections.value = selections.value.filter(s => s.id !== id)
     if (selections.value.length === 0) {
       isDrawerOpen.value = false
+      championGameData.value = null
     }
   }
 
@@ -94,7 +108,10 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   function removeSelectionsInMarket(matchId: number, market: string) {
     const prefix = `${matchId}-${market}-`
     selections.value = selections.value.filter(s => s.matchId !== matchId || !s.id.startsWith(prefix))
-    if (selections.value.length === 0) isDrawerOpen.value = false
+    if (selections.value.length === 0) {
+      isDrawerOpen.value = false
+      championGameData.value = null
+    }
   }
 
   function toggleSelection(selection: BetSelection) {
@@ -114,6 +131,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     selections.value = []
     isDrawerOpen.value = false
     purchaseInsurance.value = false
+    championGameData.value = null
   }
 
   function setStake(amount: number) {
@@ -165,6 +183,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   return {
     selections,
     siteGame,
+    championGameData,
     fetchSiteGame,
     stake,
     betMode,
