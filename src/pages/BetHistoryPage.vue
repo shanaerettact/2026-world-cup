@@ -145,8 +145,9 @@ onMounted(() => {
                 {{ $t(statusConfig(bet.status as any).labelKey) }}
               </span>
             </div>
-            <div class="flex items-center justify-between text-sm text-[var(--color-muted)] mb-2">
-              <span>{{ bet.play_title }} · {{ bet.odds_title }}</span>
+            <div class="flex flex-col justify-between text-sm text-[var(--color-muted)] mb-2">
+              <span>{{ $t('betSlip.playTypeLabel') }}{{ bet.play_title }}</span>
+              <span>{{ $t('betSlip.betSelectionLabel') }}{{ bet.odds_title }}</span>
             </div>
             <div class="flex items-center justify-between text-sm pt-2 border-t border-[var(--color-border)]">
               <span class="text-[var(--color-muted)]">{{ $t('common.stake') }} {{ $t('common.currencySymbol') }}{{ bet.amount }}</span>

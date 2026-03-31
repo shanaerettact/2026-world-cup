@@ -115,6 +115,7 @@
   "betSlip": {
     "title": "Bet Slip",
     "playTypeLabel": "Market: ",
+    "betSelectionLabel": "Selection: ",
     "insurance": {
       "label": "Purchase insurance",
       "helpAria": "Insurance rules",
