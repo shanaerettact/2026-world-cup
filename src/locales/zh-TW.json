@@ -114,6 +114,7 @@
   },
   "betSlip": {
     "title": "投注單",
+    "playTypeLabel": "玩法：",
     "insurance": {
       "label": "購買保險",
       "helpAria": "保險規則說明",

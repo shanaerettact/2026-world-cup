@@ -11,6 +11,16 @@ function isCompactMarket(s: BetSelection): boolean {
   return true
 }
 
+/** 大小玩法：投注單只顯示「大」或「小」，不顯示「大於／小於」等字 */
+function displaySelectionLabel(s: BetSelection): string {
+  const raw = s.selection.trim()
+  if (raw.startsWith('大於')) return '大'
+  if (raw.startsWith('小於')) return '小'
+  if (/^over\b/i.test(raw)) return '大'
+  if (/^under\b/i.test(raw)) return '小'
+  return s.selection
+}
+
 const betSlipStore = useBetSlipStore()
 const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
 
@@ -195,15 +205,15 @@ watch(
               </button>
               <p class="text-xs text-[var(--color-muted)] mb-1">{{ selection.matchTitle }}</p>
               <template v-if="isCompactMarket(selection)">
-                <p class="text-sm font-medium text-[var(--color-text)] mb-1">{{ selection.playTitle || selection.betType }}</p>
+                <p class="text-sm font-medium text-[var(--color-text)] mb-1">{{ $t('betSlip.playTypeLabel') }}{{ selection.playTitle || selection.betType }}</p>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-[var(--color-text)]">{{ selection.selection }}</span>
+                  <span class="text-sm text-[var(--color-text)]">{{ displaySelectionLabel(selection) }}</span>
                   <span class="text-sm font-bold text-primary">{{ selection.odds.toFixed(2) }}</span>
                 </div>
               </template>
               <template v-else>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm font-medium text-[var(--color-text)]">{{ selection.selection }}</span>
+                  <span class="text-sm font-medium text-[var(--color-text)]">{{ displaySelectionLabel(selection) }}</span>
                   <span class="text-sm font-bold text-primary">{{ selection.odds.toFixed(2) }}</span>
                 </div>
               </template>
