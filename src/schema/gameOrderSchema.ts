@@ -14,8 +14,10 @@ export const BetRecordSchema = z.object({
   odds_title: z.string(),        // 賠率選項：小於4張
   odds: z.string(),              // 賠率
   amount: z.string(),            // 投注金額
-  escape: z.string(),            // 是否可逃跑
-  escape_fee: z.string(),        // 逃跑收益
+  escape: z.string(),            // 是否購買逃跑保險：1=有，2=無（與下注送出一致）
+  escape_fee: z.string(),        // 保險費率（%）
+  escape_win: z.string().optional(), // 中獎時保險收益比例（%）
+  escape_lose: z.string().optional(), // 未中獎時保險退回比例（%）
   bonus: z.string(),             // 中獎金額
   result: z.string(),            // 結果代碼
   result_title: z.string(),      // 結果名稱：小於4張

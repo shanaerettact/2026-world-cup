@@ -36,6 +36,57 @@ function bonusToneClass(bonus: string) {
   return n > 0 ? 'text-success' : 'text-danger'
 }
 
+function parseAmount(s: string) {
+  const n = Number(String(s).replace(/,/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
+function pctToNumber(s: string | undefined) {
+  const n = Number(s)
+  return Number.isFinite(n) ? n : 0
+}
+
+function betTotalOdds(bet: BetHistoryData['list'][number]) {
+  return parseAmount(bet.odds)
+}
+
+function showInsuranceBreakdown(bet: BetHistoryData['list'][number]) {
+  return bet.escape === '1'
+}
+
+function insuranceFeeAmount(bet: BetHistoryData['list'][number]) {
+  if (!showInsuranceBreakdown(bet)) return 0
+  const stake = parseAmount(bet.amount)
+  return stake * (pctToNumber(bet.escape_fee) / 100)
+}
+
+function insuranceWinProfitAmount(bet: BetHistoryData['list'][number]) {
+  if (!showInsuranceBreakdown(bet)) return 0
+  const stake = parseAmount(bet.amount)
+  const odds = betTotalOdds(bet)
+  const p = pctToNumber(bet.escape_win)
+  return stake * Math.max(0, odds - 1) * (p / 100)
+}
+
+function insuranceLoseRefundAmount(bet: BetHistoryData['list'][number]) {
+  if (!showInsuranceBreakdown(bet)) return 0
+  const stake = parseAmount(bet.amount)
+  return stake * (pctToNumber(bet.escape_lose) / 100)
+}
+
+function potentialPayoutForBet(bet: BetHistoryData['list'][number]) {
+  return parseAmount(bet.amount) * betTotalOdds(bet)
+}
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat(locale.value, {
+    style: 'currency',
+    currency: 'TWD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
 const statusConfig = (status: BetRecord['status']) => {
   switch (status) {
     case 'won': return { icon: Trophy, class: 'text-success bg-success/10', labelKey: 'live.status.won' }
@@ -155,6 +206,55 @@ onMounted(() => {
                 <span :class="bonusToneClass(bet.bonus)">{{ $t('common.currencySymbol') }}{{ bet.bonus }}</span>
                 <span class="text-xs text-[var(--color-muted)] font-normal">@ {{ bet.odds }}</span>
               </span>
+            </div>
+            <div class="space-y-2 pt-2 border-t border-[var(--color-border)]">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-[var(--color-muted)]">{{ $t('common.totalOdds') }}</span>
+                <span class="font-semibold text-[var(--color-text)]">
+                  {{ betTotalOdds(bet).toFixed(2) }}
+                </span>
+              </div>
+              <template v-if="showInsuranceBreakdown(bet)">
+                <div class="flex items-start justify-between gap-2 text-sm">
+                  <div class="min-w-0">
+                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
+                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                      {{ $t('betSlip.insurance.feeSub', { rate: bet.escape_fee ?? '0' }) }}
+                    </p>
+                  </div>
+                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                    {{ formatCurrency(insuranceFeeAmount(bet)) }}
+                  </span>
+                </div>
+                <div class="flex items-start justify-between gap-2 text-sm">
+                  <div class="min-w-0">
+                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.winTrialLabel') }}</span>
+                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                      {{ $t('betSlip.insurance.winTrialSub', { rate: bet.escape_win ?? '0' }) }}
+                    </p>
+                  </div>
+                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                    {{ formatCurrency(insuranceWinProfitAmount(bet)) }}
+                  </span>
+                </div>
+                <div class="flex items-start justify-between gap-2 text-sm">
+                  <div class="min-w-0">
+                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.loseTrialLabel') }}</span>
+                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                      {{ $t('betSlip.insurance.loseTrialSub', { rate: bet.escape_lose ?? '0' }) }}
+                    </p>
+                  </div>
+                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                    {{ formatCurrency(insuranceLoseRefundAmount(bet)) }}
+                  </span>
+                </div>
+              </template>
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-[var(--color-muted)]">{{ $t('common.potentialPayout') }}</span>
+                <span class="text-xl font-bold text-success">
+                  {{ formatCurrency(potentialPayoutForBet(bet)) }}
+                </span>
+              </div>
             </div>
             <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ betTimeLine(new Date(bet.bet_time).getTime()) }}</div>
           </div>
