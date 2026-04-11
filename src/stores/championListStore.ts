@@ -6,8 +6,13 @@ import type { ChampionListData } from '@/schema/championListSchema'
 export const useChampionListStore = defineStore('championList', () => {
   const championList = ref<ChampionListData['list']>([])
   const fetchChampionList = async () => {
-    const res = (await getChampionList()) as ChampionListData
-    championList.value = res.list ?? []
+    try {
+      const res = (await getChampionList()) as ChampionListData
+      championList.value = res.list ?? []
+    } catch (e) {
+      console.error(e)
+      championList.value = []
+    }
   }
   return {
     championList,
