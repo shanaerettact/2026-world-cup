@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, TrendingUp, Star, Zap, Target, ArrowUpRight } from 'lucide-vue-next'
 import { useBettingModalStore } from '@/stores/bettingModalStore'
@@ -200,10 +200,6 @@ watch(
 
 onUnmounted(() => {
   if (countdownTimer != null) clearInterval(countdownTimer)
-})
-
-onMounted(() => {
-  championListStore.fetchChampionList()
 })
 </script>
 

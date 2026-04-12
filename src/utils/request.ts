@@ -36,11 +36,17 @@ instance.interceptors.request.use(
       if (config.data instanceof FormData && !config.data.has('MemID')) {
         config.data.append('MemID', token)
       }
+      if (config.data instanceof URLSearchParams && !config.data.has('MemID')) {
+        config.data.append('MemID', token)
+      }
     }
     return config
   },
   (error) => Promise.reject(error)
 )
+
+/** 後端業務 code：例如 4 表示登入失效，應導向登入失效頁 */
+export const API_CODE_SESSION_EXPIRED = 4
 
 function unwrapApiBody(body: unknown) {
   if (body != null && typeof body === 'object' && 'code' in body) {
@@ -51,6 +57,10 @@ function unwrapApiBody(body: unknown) {
       data?: unknown
     }
     if (code !== 1) {
+      if (code === API_CODE_SESSION_EXPIRED) {
+        localStorage.removeItem('token')
+        window.dispatchEvent(new CustomEvent('worldcup:session-expired'))
+      }
       return Promise.reject(new Error(msg || message || `code ${code}`))
     }
     return data

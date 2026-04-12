@@ -4,11 +4,18 @@ import { Home, Zap, Wallet, MessageCircle, LayoutGrid } from 'lucide-vue-next'
 import { useChatStore } from '@/stores/chatStore'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 import { useBettingModalStore } from '@/stores/bettingModalStore'
+import { useChampionListStore } from '@/stores/championListStore'
 
 const route = useRoute()
 const chatStore = useChatStore()
 const betSlipStore = useBetSlipStore()
 const bettingModalStore = useBettingModalStore()
+const championListStore = useChampionListStore()
+
+function openBettingMarkets() {
+  bettingModalStore.open()
+  void championListStore.fetchChampionList()
+}
 
 const navItems = [
   { labelKey: 'nav.home', path: '/', icon: Home },
@@ -52,7 +59,7 @@ const isActive = (path: string) => route.path === path
         <div class="relative flex flex-col items-center justify-center w-16">
           <!-- Raised circular button sitting above the nav bar -->
           <button
-            @click="bettingModalStore.open()"
+            @click="openBettingMarkets"
             class="markets-fab-nav absolute -top-8 w-14 h-14 rounded-full
                    flex flex-col items-center justify-center gap-0.5
                    transition-all duration-200 active:scale-90 select-none"
