@@ -101,16 +101,18 @@ function toApiDateTime(d: Date) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
-function gameOrderRangeFromTodayThroughJulyEnd() {
+/** Wide window so server-side filters do not drop bets before “today” or last year */
+function gameOrderRangeLastTwoYears() {
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
   const start = new Date()
+  start.setFullYear(start.getFullYear() - 2)
   start.setHours(0, 0, 0, 0)
-  const y = start.getFullYear()
-  const end = new Date(y, 6, 31, 23, 59, 59)
   return { start_time: toApiDateTime(start), end_time: toApiDateTime(end) }
 }
 
 function loadGameOrders() {
-  const { start_time, end_time } = gameOrderRangeFromTodayThroughJulyEnd()
+  const { start_time, end_time } = gameOrderRangeLastTwoYears()
   return gameOrderStore.fetchGameOrderList({
     status: orderStatusFilter.value,
     start_time,
