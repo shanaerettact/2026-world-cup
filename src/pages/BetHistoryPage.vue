@@ -5,16 +5,18 @@ import { History, Clock, Trophy, XCircle } from 'lucide-vue-next'
 import type { BetRecord } from '@/stores/betSlipStore'
 import { useGameOrderStore } from '@/stores/gameOrderStore'
 import type { BetHistoryData } from '@/schema/gameOrderSchema'
+import { getEscapeGame } from '@/services/api/escapeGameApi'
 
 const gameOrderStore = useGameOrderStore()
 const { locale, t } = useI18n()
 
 type GameOrderStatusFilter = '1' | '2'
 const orderStatusFilter = ref<GameOrderStatusFilter>('1')
+const escapeLoadingId = ref<string | null>(null)
 
 const gameOrderList = computed<BetHistoryData['list']>(() => gameOrderStore.gameOrderList ?? [])
 
-/** 年／月／日＋時分，依目前語系地區格式 */
+/** 年／月／日��時分，依目前語系地區格式 */
 function formatBetDateTime(ts: number) {
   const d = new Date(ts)
   return new Intl.DateTimeFormat(locale.value, {
@@ -95,7 +97,7 @@ const statusConfig = (status: BetRecord['status']) => {
   }
 }
 
-/** 與後端一致：yyyy-MM-dd HH:mm:ss（本地時區） */
+/** ��後端一致：yyyy-MM-dd HH:mm:ss（本地時區） */
 function toApiDateTime(d: Date) {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
@@ -124,6 +126,20 @@ function setOrderStatusTab(s: GameOrderStatusFilter) {
   if (orderStatusFilter.value === s) return
   orderStatusFilter.value = s
   loadGameOrders()
+}
+
+async function handleBuyInsurance(bet: BetHistoryData['list'][number]) {
+  const id = String(bet.id ?? '').trim()
+  if (!id) return
+  escapeLoadingId.value = id
+  try {
+    await getEscapeGame(id)
+    await loadGameOrders()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    escapeLoadingId.value = null
+  }
 }
 
 onMounted(() => {
@@ -198,9 +214,28 @@ onMounted(() => {
                 {{ $t(statusConfig(bet.status as any).labelKey) }}
               </span>
             </div>
-            <div class="flex flex-col justify-between text-sm text-[var(--color-muted)] mb-2">
-              <span>{{ $t('betSlip.playTypeLabel') }}{{ bet.play_title }}</span>
-              <span>{{ $t('betSlip.betSelectionLabel') }}{{ bet.odds_title }}</span>
+            <div class="flex justify-between gap-3 text-sm text-[var(--color-muted)] mb-2">
+              <div class="flex flex-col min-w-0">
+                <span>{{ $t('betSlip.playTypeLabel') }}{{ bet.play_title }}</span>
+                <span>{{ $t('betSlip.betSelectionLabel') }}{{ bet.odds_title }}</span>
+              </div>
+              <div v-if="showInsuranceBreakdown(bet)" class="flex-shrink-0 self-start">
+                <button
+                  type="button"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold
+                         bg-primary/15 text-primary border border-primary/30
+                         transition-all active:scale-[0.98]
+                         disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
+                  :disabled="escapeLoadingId === bet.id"
+                  @click="handleBuyInsurance(bet)"
+                >
+                  <span
+                    v-if="escapeLoadingId === bet.id"
+                    class="inline-block w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin align-[-2px] mr-1"
+                  />
+                  {{ $t('betSlip.insurance.label') }}
+                </button>
+              </div>
             </div>
             <div class="flex items-center justify-between text-sm pt-2 border-t border-[var(--color-border)]">
               <span class="text-[var(--color-muted)]">{{ $t('common.stake') }} {{ $t('common.currencySymbol') }}{{ bet.amount }}</span>
