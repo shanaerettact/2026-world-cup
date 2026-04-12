@@ -6,22 +6,78 @@ import { bootstrapWorldcupAuth } from '@/utils/request'
 const loginUserForRelogin = () =>
   import.meta.env.VITE_LOGIN_USER || 'user01'
 
+function pickUserRecord(payload: unknown): Record<string, unknown> | null {
+  if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) return null
+  const o = payload as Record<string, unknown>
+  const inner = o.user
+  if (inner != null && typeof inner === 'object' && !Array.isArray(inner)) {
+    return inner as Record<string, unknown>
+  }
+  if ('id' in o || 'account' in o || 'balance' in o || 'name' in o) return o
+  return null
+}
+
+function numFromApi(v: unknown): number | null {
+  if (v == null) return null
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  const n = Number(String(v).replace(/,/g, ''))
+  return Number.isFinite(n) ? n : null
+}
+
+function strFromApi(v: unknown): string {
+  if (v == null) return ''
+  return String(v).trim()
+}
+
 export const useUserStore = defineStore('user', () => {
-  const balance = ref(8000)
+  const balance = ref(0)
   const isDepositing = ref(false)
   const username = ref('')
 
-  const userAccount = ref<any>(null)
-  const userId = ref<number>(0)
+  const userAccount = ref('')
+  const userId = ref(0)
+  const phone = ref('')
+  const email = ref('')
+  const memberLevel = ref('')
+  const memberSinceRaw = ref('')
+  const betHistoryMenuBadge = ref('')
+
   const fetchUserInfo = async () => {
-    const applyUser = (res: any) => {
-      const user = res?.user
-      if (user?.id != null) userId.value = Number(user.id)
-      if (user?.account != null) userAccount.value = user.account
-      if (user?.balance != null) {
-        balance.value = Number(user.balance)
-      }
-      if (user?.name != null) username.value = user.name
+    const applyUser = (payload: unknown) => {
+      const user = pickUserRecord(payload)
+      if (!user) return
+
+      const idNum = numFromApi(user.id)
+      if (idNum != null) userId.value = idNum
+
+      const acct = strFromApi(user.account)
+      if (acct) userAccount.value = acct
+
+      const bal = numFromApi(user.balance ?? user.money ?? user.credit)
+      if (bal != null) balance.value = bal
+
+      const name =
+        strFromApi(user.name) ||
+        strFromApi(user.nickname) ||
+        strFromApi(user.nick_name)
+      if (name) username.value = name
+
+      phone.value = strFromApi(user.phone ?? user.mobile)
+      email.value = strFromApi(user.email)
+      memberLevel.value =
+        strFromApi(user.level ?? user.vip ?? user.grade ?? user.member_level)
+
+      const since =
+        strFromApi(user.create_time) ||
+        strFromApi(user.register_time) ||
+        strFromApi(user.join_time)
+      memberSinceRaw.value = since
+
+      const pending = numFromApi(
+        user.bet_count ?? user.order_count ?? user.unsettled_count,
+      )
+      betHistoryMenuBadge.value =
+        pending != null && pending > 0 ? String(pending) : ''
     }
     try {
       applyUser(await getUserInfo())
@@ -97,6 +153,11 @@ export const useUserStore = defineStore('user', () => {
     username,
     userId,
     userAccount,
+    phone,
+    email,
+    memberLevel,
+    memberSinceRaw,
+    betHistoryMenuBadge,
     formattedBalance,
     deposit,
     deductBalance,

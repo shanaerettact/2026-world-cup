@@ -77,6 +77,14 @@
     "betTime": "投注時間：{time}"
   },
   "account": {
+    "profile": {
+      "fallbackName": "會員",
+      "accountShort": "帳號 {account}",
+      "idShort": "編號 {id}",
+      "levelShort": "等級 {level}",
+      "contactPhone": "電話",
+      "contactEmail": "信箱"
+    },
     "membership": {
       "premium": "尊享會員"
     },

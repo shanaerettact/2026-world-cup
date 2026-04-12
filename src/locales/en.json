@@ -77,6 +77,14 @@
     "betTime": "Bet time: {time}"
   },
   "account": {
+    "profile": {
+      "fallbackName": "Member",
+      "accountShort": "Account {account}",
+      "idShort": "ID {id}",
+      "levelShort": "Level {level}",
+      "contactPhone": "Phone",
+      "contactEmail": "Email"
+    },
     "membership": {
       "premium": "Premium Member"
     },

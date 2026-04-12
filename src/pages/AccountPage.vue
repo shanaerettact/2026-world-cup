@@ -15,16 +15,60 @@ import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/userStore'
 
 const userStore = useUserStore()
-const { username, formattedBalance } = storeToRefs(userStore)
-const { t } = useI18n()
+const { username, formattedBalance, userAccount, userId, memberLevel, memberSinceRaw, phone, email } =
+  storeToRefs(userStore)
+const { t, locale } = useI18n()
 const depositAmount = ref(100)
 const showDepositModal = ref(false)
 
+const displayName = computed(() => {
+  const name = username.value?.trim()
+  if (name) return name
+  const acct = userAccount.value?.trim()
+  if (acct) return acct
+  return t('account.profile.fallbackName')
+})
+
+const profileInitial = computed(() => {
+  const s = displayName.value
+  return s ? s.charAt(0).toUpperCase() : '?'
+})
+
+const profileMetaParts = computed(() => {
+  const parts: string[] = []
+  if (userAccount.value?.trim()) {
+    parts.push(t('account.profile.accountShort', { account: userAccount.value.trim() }))
+  }
+  if (userId.value > 0) {
+    parts.push(t('account.profile.idShort', { id: userId.value }))
+  }
+  return parts
+})
+
+const profileLevelLine = computed(() =>
+  memberLevel.value?.trim()
+    ? t('account.profile.levelShort', { level: memberLevel.value.trim() })
+    : '',
+)
+
+const formattedMemberSince = computed(() => {
+  const raw = memberSinceRaw.value?.trim()
+  if (!raw) return ''
+  const ms = Date.parse(raw.replace(' ', 'T'))
+  if (Number.isNaN(ms)) return raw
+  return new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(ms)
+})
+
 const menuItems = computed(() => [
-  { key: 'betHistory', icon: History, label: t('account.menu.betHistory'), badge: '12' },
-  { key: 'paymentMethods', icon: CreditCard, label: t('account.menu.paymentMethods') },
-  { key: 'settings', icon: Settings, label: t('account.menu.settings') },
-  { key: 'helpSupport', icon: HelpCircle, label: t('account.menu.helpSupport') },
+  {
+    key: 'betHistory',
+    icon: History,
+    label: t('account.menu.betHistory'),
+    badge: userStore.betHistoryMenuBadge || '',
+  },
+  { key: 'paymentMethods', icon: CreditCard, label: t('account.menu.paymentMethods'), badge: '' },
+  { key: 'settings', icon: Settings, label: t('account.menu.settings'), badge: '' },
+  { key: 'helpSupport', icon: HelpCircle, label: t('account.menu.helpSupport'), badge: '' },
 ])
 
 
@@ -58,11 +102,15 @@ onMounted(() => {
           <div 
             class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
           >
-            {{ (username).charAt(0).toUpperCase() }}
+            {{ profileInitial }}
           </div>
-          <div>
-            <h2 class="text-xl font-bold text-white">{{ username }}</h2>
-            <p class="text-sm text-white/70">{{ $t('account.membership.premium') }}</p>
+          <div class="min-w-0">
+            <h2 class="text-xl font-bold text-white truncate">{{ displayName }}</h2>
+            <p v-if="profileLevelLine" class="text-sm text-white/80 truncate">{{ profileLevelLine }}</p>
+            <p v-else class="text-sm text-white/70">{{ $t('account.membership.premium') }}</p>
+            <p v-if="profileMetaParts.length" class="text-xs text-white/60 mt-1 line-clamp-2">
+              {{ profileMetaParts.join(' · ') }}
+            </p>
           </div>
         </div>
       </div>
@@ -99,9 +147,29 @@ onMounted(() => {
         <Plus v-else class="w-5 h-5" />
         <span>{{ userStore.isDepositing ? $t('common.processing') : $t('account.deposit.cta') }}</span>
       </button>
+
+      <div
+        v-if="phone?.trim() || email?.trim()"
+        class="mt-4 pt-4 border-t border-[var(--color-border)] space-y-2 text-sm"
+      >
+        <p v-if="phone?.trim()" class="text-[var(--color-muted)]">
+          <span class="font-medium text-[var(--color-text)]">{{ $t('account.profile.contactPhone') }}</span>
+          {{ phone.trim() }}
+        </p>
+        <p v-if="email?.trim()" class="text-[var(--color-muted)] break-all">
+          <span class="font-medium text-[var(--color-text)]">{{ $t('account.profile.contactEmail') }}</span>
+          {{ email.trim() }}
+        </p>
+      </div>
     </div>
 
-    <!-- Stats Grid -->
+    <div
+      v-if="formattedMemberSince"
+      class="bg-[var(--color-card)] rounded-2xl p-4 mb-6 border border-[var(--color-border)]"
+    >
+      <p class="text-xs text-[var(--color-muted)] mb-1">{{ $t('account.stats.memberSince') }}</p>
+      <p class="font-semibold text-[var(--color-text)]">{{ formattedMemberSince }}</p>
+    </div>
 
     <!-- Menu -->
     <div class="bg-[var(--color-card)] rounded-2xl overflow-hidden
