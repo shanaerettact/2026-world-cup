@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getHomeData } from '@/services/api/homeApi'
+import { bootstrapWorldcupAuth } from '@/utils/request'
 import type { HomeData, Game, FeaturedCardViewData } from '@/schema/homeSchema'
 import type { Match } from '@/services/api/matchApi'
 
@@ -43,16 +44,49 @@ export function gameToFeaturedCardView(g: Game): FeaturedCardView {
   }
 }
 
+const loginUserForRelogin = () => import.meta.env.VITE_LOGIN_USER || 'user01'
+
+function isAuthRecoverableMessage(msg: string) {
+  return (
+    msg.includes('無法登入') ||
+    msg.includes('已失效') ||
+    msg.includes('其他地方登入')
+  )
+}
+
 export const useHomeStore = defineStore('home', () => {
   const homeData = ref<HomeData | null>(null)
   const selectedGame = ref<Game | null>(null)
   const detailScrollToTabs = ref(false)
 
+  let fetchHomeDataInFlight: Promise<void> | null = null
+
   const fetchHomeData = async () => {
+    if (fetchHomeDataInFlight) return fetchHomeDataInFlight
+    fetchHomeDataInFlight = (async () => {
+      const loadOnce = async () => {
+        homeData.value = await getHomeData()
+      }
+      try {
+        await loadOnce()
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
+        if (isAuthRecoverableMessage(msg)) {
+          try {
+            await bootstrapWorldcupAuth(loginUserForRelogin())
+            await loadOnce()
+            return
+          } catch (e) {
+            console.error(e)
+          }
+        }
+        console.error(error)
+      }
+    })()
     try {
-      homeData.value = await getHomeData()
-    } catch (error) {
-      console.error(error)
+      await fetchHomeDataInFlight
+    } finally {
+      fetchHomeDataInFlight = null
     }
   }
 

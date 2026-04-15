@@ -48,6 +48,26 @@ instance.interceptors.request.use(
 /** 後端業務 code：例如 4 表示登入失效，應導向登入失效頁 */
 export const API_CODE_SESSION_EXPIRED = 4
 
+/** code 4 先清 token；導向失效頁延後，讓 bootstrapWorldcupAuth 等有機會寫回 token 後取消 */
+let sessionExpiredNavTimer: ReturnType<typeof setTimeout> | null = null
+
+export function cancelDeferredSessionExpiredNavigation() {
+  if (sessionExpiredNavTimer != null) {
+    clearTimeout(sessionExpiredNavTimer)
+    sessionExpiredNavTimer = null
+  }
+}
+
+function scheduleSessionExpiredNavigationIfStillLoggedOut() {
+  cancelDeferredSessionExpiredNavigation()
+  sessionExpiredNavTimer = setTimeout(() => {
+    sessionExpiredNavTimer = null
+    if (!localStorage.getItem('token')) {
+      window.dispatchEvent(new CustomEvent('worldcup:session-expired'))
+    }
+  }, 1000)
+}
+
 function unwrapApiBody(body: unknown) {
   if (body != null && typeof body === 'object' && 'code' in body) {
     const { code, msg, message, data } = body as {
@@ -59,7 +79,7 @@ function unwrapApiBody(body: unknown) {
     if (code !== 1) {
       if (code === API_CODE_SESSION_EXPIRED) {
         localStorage.removeItem('token')
-        window.dispatchEvent(new CustomEvent('worldcup:session-expired'))
+        scheduleSessionExpiredNavigationIfStillLoggedOut()
       }
       return Promise.reject(new Error(msg || message || `code ${code}`))
     }
@@ -119,6 +139,7 @@ export async function bootstrapWorldcupAuth(user: string) {
     throw new Error('MemID missing in RedirectUrl')
   }
   localStorage.setItem('token', memId)
+  cancelDeferredSessionExpiredNavigation()
 }
 
 export default instance;

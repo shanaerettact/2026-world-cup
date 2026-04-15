@@ -147,9 +147,9 @@ function onDateBarMouseDownCapture(e: MouseEvent) {
   document.addEventListener('mouseup', stopDateBarDrag)
 }
 
-onMounted(() => {
-  matchStore.fetchMatches()
-  homeStore.fetchHomeData()
+onMounted(async () => {
+  await homeStore.fetchHomeData()
+  await matchStore.fetchMatches()
 })
 
 onUnmounted(() => {
