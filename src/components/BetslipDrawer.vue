@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
-import { X, CircleHelp } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import { useBetSlipStore, type BetSelection } from '@/stores/betSlipStore'
 
 const COMPACT_MARKETS = new Set(['Moneyline', 'Handicap'])
@@ -22,15 +22,11 @@ function displaySelectionLabel(s: BetSelection): string {
 }
 
 const betSlipStore = useBetSlipStore()
-const { purchaseInsurance, stake } = storeToRefs(betSlipStore)
+const { stake } = storeToRefs(betSlipStore)
 
 const showPurchaseInsurance = computed(
   () => betSlipStore.siteGame?.list?.[0]?.escape === '1'
 )
-
-watch(showPurchaseInsurance, (show) => {
-  if (!show) purchaseInsurance.value = false
-})
 
 const activePeriod = computed(() => betSlipStore.siteGame?.list?.[0] ?? null)
 
@@ -40,10 +36,7 @@ function pctToNumber(s: string | undefined): number {
 }
 
 const showInsuranceBreakdown = computed(
-  () =>
-    purchaseInsurance.value &&
-    showPurchaseInsurance.value &&
-    activePeriod.value != null
+  () => showPurchaseInsurance.value && activePeriod.value != null
 )
 
 const insuranceFeeAmount = computed(() => {
@@ -72,29 +65,6 @@ const resolvedSiteGameId = computed(() => {
 const firstSelectionMarket = computed(() => betSlipStore.selections[0]?.market)
 const { locale } = useI18n()
 
-const insuranceHelpOpen = ref(false)
-const insuranceHelpWrapRef = ref<HTMLElement | null>(null)
-
-watch(insuranceHelpOpen, (open) => {
-  if (!open) return
-  const close = (e: MouseEvent) => {
-    const t = e.target as Node
-    if (insuranceHelpWrapRef.value && !insuranceHelpWrapRef.value.contains(t)) {
-      insuranceHelpOpen.value = false
-    }
-  }
-  const id = window.setTimeout(() => document.addEventListener('click', close, true), 0)
-  return () => {
-    window.clearTimeout(id)
-    document.removeEventListener('click', close, true)
-  }
-})
-
-function toggleInsuranceHelp(e: MouseEvent) {
-  e.stopPropagation()
-  insuranceHelpOpen.value = !insuranceHelpOpen.value
-}
-
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat(locale.value, {
     style: 'currency',
@@ -115,7 +85,6 @@ watch(() => betSlipStore.isDrawerOpen, (open) => {
     document.body.style.overflow = 'hidden'
   } else {
     if (!betSlipStore.isConfirmModalOpen) document.body.style.overflow = ''
-    insuranceHelpOpen.value = false
   }
 })
 
@@ -222,43 +191,6 @@ watch(
 
           <!-- Summary -->
           <div class="p-4 space-y-3">
-            <!-- Purchase insurance（與賽事詳情 activePeriod.escape === '1' 時顯示） -->
-            <div
-              v-if="showPurchaseInsurance"
-              class="flex items-center gap-2 p-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]"
-            >
-              <label class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer select-none">
-                <input
-                  v-model="purchaseInsurance"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-[var(--color-border)] text-primary focus:ring-primary shrink-0"
-                />
-                <span class="text-sm font-medium text-[var(--color-text)]">{{ $t('betSlip.insurance.label') }}</span>
-              </label>
-              <div ref="insuranceHelpWrapRef" class="relative shrink-0">
-                <button
-                  type="button"
-                  class="p-1 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-card)] hover:text-primary transition-colors"
-                  :aria-label="$t('betSlip.insurance.helpAria')"
-                  :aria-expanded="insuranceHelpOpen"
-                  @click="toggleInsuranceHelp"
-                >
-                  <CircleHelp class="w-5 h-5" />
-                </button>
-                <Transition name="fade">
-                  <div
-                    v-if="insuranceHelpOpen"
-                    class="absolute bottom-full right-0 mb-2 z-[70] w-[min(100vw-2rem,18rem)] rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-3 shadow-xl shadow-black/20"
-                    role="tooltip"
-                  >
-                    <p class="text-xs text-[var(--color-text)] leading-relaxed">
-                      {{ $t('betSlip.insurance.tooltip') }}
-                    </p>
-                  </div>
-                </Transition>
-              </div>
-            </div>
-
             <!-- Stake Input -->
             <div class="flex items-center gap-3">
               <span class="text-sm text-[var(--color-muted)]">{{ $t('common.stake') }}</span>
@@ -300,7 +232,7 @@ watch(
                   {{ betSlipStore.totalOdds.toFixed(2) }}
                 </span>
               </div>
-              <template v-if="showInsuranceBreakdown">
+              <template v-if="showPurchaseInsurance">
                 <div class="flex items-start justify-between gap-2 text-sm">
                   <div class="min-w-0">
                     <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
