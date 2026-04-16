@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { getSiteGame } from '@/services/api/siteGameApi'
 import type { GameDetailData } from '@/schema/siteGameSchema'
 import type { ChampionGameData } from '@/schema/championDetailSchema'
+import { useBettingModalStore } from '@/stores/bettingModalStore'
 
 
 
@@ -52,6 +53,9 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   /** 冠軍賽：由 /site/champion 回傳，供 BetslipDrawer 顯示 */
   const championGameData = ref<ChampionGameData | null>(null)
 
+  /** 由 BettingOptionsModal 冠軍賠率加入後，僅在抽屜標題列清空時重新打開特殊玩法 modal */
+  const reopenBettingOptionsModalAfterSlipClear = ref(false)
+
   const selections = ref<BetSelection[]>([])
   const betHistory = ref<BetRecord[]>([...MOCK_BET_HISTORY])
   const stake = ref<number>(100)
@@ -80,10 +84,29 @@ export const useBetSlipStore = defineStore('betSlip', () => {
   /** 投注單只保留一筆：新選項會取代既有選項 */
   function addSelection(
     selection: BetSelection,
-    options?: { championGameData?: ChampionGameData | null },
+    options?: {
+      championGameData?: ChampionGameData | null
+      /** 與 BettingOptionsModal 冠軍賠率連動：抽屜標題列清空後重新打開 modal */
+      reopenBettingOptionsModalAfterSlipClear?: boolean
+    },
   ) {
+    const wantReopenModal =
+      !!(
+        options?.reopenBettingOptionsModalAfterSlipClear &&
+        selection.market === 'Champion' &&
+        options?.championGameData != null
+      )
+
     const exists = selections.value.some((s) => s.id === selection.id)
-    if (exists) return
+    if (exists) {
+      if (selection.market === 'Champion' && options?.championGameData != null) {
+        championGameData.value = options.championGameData
+        siteGame.value = null
+      }
+      if (!isDrawerOpen.value) isDrawerOpen.value = true
+      reopenBettingOptionsModalAfterSlipClear.value = wantReopenModal
+      return
+    }
     selections.value = [selection]
     if (selection.market === 'Champion' && options?.championGameData != null) {
       championGameData.value = options.championGameData
@@ -94,6 +117,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     if (!isDrawerOpen.value) {
       isDrawerOpen.value = true
     }
+    reopenBettingOptionsModalAfterSlipClear.value = wantReopenModal
   }
 
   function removeSelection(id: string) {
@@ -101,6 +125,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     if (selections.value.length === 0) {
       isDrawerOpen.value = false
       championGameData.value = null
+      reopenBettingOptionsModalAfterSlipClear.value = false
     }
   }
 
@@ -111,6 +136,7 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     if (selections.value.length === 0) {
       isDrawerOpen.value = false
       championGameData.value = null
+      reopenBettingOptionsModalAfterSlipClear.value = false
     }
   }
 
@@ -127,11 +153,17 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     return selections.value.some(s => s.id === id)
   }
 
-  function clearSelections() {
+  function clearSelections(options?: { fromDrawerHeader?: boolean }) {
     selections.value = []
     isDrawerOpen.value = false
     purchaseInsurance.value = false
     championGameData.value = null
+    const reopen =
+      reopenBettingOptionsModalAfterSlipClear.value && options?.fromDrawerHeader === true
+    reopenBettingOptionsModalAfterSlipClear.value = false
+    if (reopen) {
+      useBettingModalStore().open()
+    }
   }
 
   function setStake(amount: number) {

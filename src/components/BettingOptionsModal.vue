@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onUnmounted } from 'vue'
+import { ref, watch, computed, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, TrendingUp, Star, Zap, Target, ArrowUpRight } from 'lucide-vue-next'
 import { useBettingModalStore } from '@/stores/bettingModalStore'
@@ -144,7 +144,9 @@ async function handleChampionOddClick(champion: { id: string; title: string }, o
     const oddResolved = data.list.find((o) => o.id === odd.id) ?? odd
     betSlipStore.addSelection(championOddToBetSelection(champion, oddResolved, data.game), {
       championGameData: data,
+      reopenBettingOptionsModalAfterSlipClear: true,
     })
+    await nextTick()
     store.close()
   } catch (e) {
     console.error(e)

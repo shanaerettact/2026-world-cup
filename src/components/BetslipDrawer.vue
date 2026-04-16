@@ -106,7 +106,7 @@ watch(
     <Transition name="fade">
       <div
         v-if="betSlipStore.isDrawerOpen"
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[75]"
         @click="betSlipStore.closeDrawer"
       />
     </Transition>
@@ -115,7 +115,7 @@ watch(
     <Transition name="slide-up">
       <div
         v-if="betSlipStore.isDrawerOpen"
-        class="fixed bottom-0 left-0 right-0 z-[60] max-w-[430px] mx-auto"
+        class="fixed bottom-0 left-0 right-0 z-[75] max-w-[430px] mx-auto"
       >
         <div class="bg-[var(--color-card)] rounded-t-3xl shadow-2xl shadow-black/20
                     max-h-[100vh] flex flex-col">
@@ -134,7 +134,7 @@ watch(
             </h2>
             <button
               type="button"
-              @click="betSlipStore.clearSelections"
+              @click="betSlipStore.clearSelections({ fromDrawerHeader: true })"
               class="p-2 rounded-lg hover:bg-[var(--color-bg)] transition-colors"
             >
               <X class="w-5 h-5 text-[var(--color-muted)]" />
