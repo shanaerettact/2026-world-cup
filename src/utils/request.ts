@@ -76,7 +76,8 @@ function unwrapApiBody(body: unknown) {
       message?: string
       data?: unknown
     }
-    if (code !== 1) {
+    const isSuccess = code === 1 || code === 200
+    if (!isSuccess) {
       if (code === API_CODE_SESSION_EXPIRED) {
         localStorage.removeItem('token')
         scheduleSessionExpiredNavigationIfStillLoggedOut()
@@ -121,7 +122,7 @@ function memIdFromRedirectUrl(redirectUrl: string): string | null {
   }
 }
 
-export async function bootstrapWorldcupAuth(user: string) {
+export async function bootstrapWorldcupAuth(user: string): Promise<string> {
   const { data } = await instance.get<WorldcupLoginBody>('/test/login', {
     params: { user },
     skipUnwrap: true,
@@ -134,12 +135,14 @@ export async function bootstrapWorldcupAuth(user: string) {
   if (data.code !== 200 || !data.Data?.RedirectUrl) {
     throw new Error(data.message || 'login failed')
   }
-  const memId = memIdFromRedirectUrl(data.Data.RedirectUrl)
+  const redirectUrl = data.Data.RedirectUrl
+  const memId = memIdFromRedirectUrl(redirectUrl)
   if (!memId) {
     throw new Error('MemID missing in RedirectUrl')
   }
   localStorage.setItem('token', memId)
   cancelDeferredSessionExpiredNavigation()
+  return redirectUrl
 }
 
 export default instance;
