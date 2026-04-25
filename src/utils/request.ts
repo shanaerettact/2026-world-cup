@@ -9,46 +9,10 @@ const instance = axios.create({
   },
 });
 
-function shouldAttachMemId(config: import('axios').InternalAxiosRequestConfig) {
-  const extra = config as { skipAuthMemId?: boolean }
-  if (extra.skipAuthMemId) return false
-  const path = (config.url || '').split('?')[0]
-  if (/\/test\/login\b/.test(path)) return false
-  return true
-}
-
-instance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token && shouldAttachMemId(config)) {
-      config.headers.Authorization = `Bearer ${token}`
-      if (config.params instanceof URLSearchParams) {
-        config.params.set('MemID', token)
-      } else {
-        const prev =
-          config.params != null &&
-          typeof config.params === 'object' &&
-          !Array.isArray(config.params)
-            ? (config.params as Record<string, unknown>)
-            : {}
-        config.params = { ...prev, MemID: token }
-      }
-      if (config.data instanceof FormData && !config.data.has('MemID')) {
-        config.data.append('MemID', token)
-      }
-      if (config.data instanceof URLSearchParams && !config.data.has('MemID')) {
-        config.data.append('MemID', token)
-      }
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
 /** 後端業務 code：例如 4 表示登入失效，應導向登入失效頁 */
 export const API_CODE_SESSION_EXPIRED = 4
 
-/** code 4 先清 token；導向失效頁延後，讓 bootstrapWorldcupAuth 等有機會寫回 token 後取消 */
+/** code 4 導向失效頁延後，讓 bootstrapWorldcupAuth 等有機會重新登入後取消 */
 let sessionExpiredNavTimer: ReturnType<typeof setTimeout> | null = null
 
 export function cancelDeferredSessionExpiredNavigation() {
@@ -62,29 +26,27 @@ function scheduleSessionExpiredNavigationIfStillLoggedOut() {
   cancelDeferredSessionExpiredNavigation()
   sessionExpiredNavTimer = setTimeout(() => {
     sessionExpiredNavTimer = null
-    if (!localStorage.getItem('token')) {
-      window.dispatchEvent(new CustomEvent('worldcup:session-expired'))
-    }
+    window.dispatchEvent(new CustomEvent('worldcup:session-expired'))
   }, 1000)
 }
 
 function unwrapApiBody(body: unknown) {
   if (body != null && typeof body === 'object' && 'code' in body) {
-    const { code, msg, message, data } = body as {
+    const { code, msg, message, data, Data } = body as {
       code: number
       msg?: string
       message?: string
       data?: unknown
+      Data?: unknown
     }
     const isSuccess = code === 1 || code === 200
     if (!isSuccess) {
       if (code === API_CODE_SESSION_EXPIRED) {
-        localStorage.removeItem('token')
         scheduleSessionExpiredNavigationIfStillLoggedOut()
       }
       return Promise.reject(new Error(msg || message || `code ${code}`))
     }
-    return data
+    return data !== undefined ? data : Data
   }
   return body
 }
@@ -108,41 +70,9 @@ instance.interceptors.response.use(
   }
 )
 
-type WorldcupLoginBody = {
-  code: number
-  message?: string
-  Data?: { RedirectUrl?: string }
-}
-
-function memIdFromRedirectUrl(redirectUrl: string): string | null {
-  try {
-    return new URL(redirectUrl).searchParams.get('MemID')
-  } catch {
-    return null
-  }
-}
-
-export async function bootstrapWorldcupAuth(user: string): Promise<string> {
-  const { data } = await instance.get<WorldcupLoginBody>('/test/login', {
-    params: { user },
-    skipUnwrap: true,
-    skipAuthMemId: true,
-  } as import('axios').AxiosRequestConfig & {
-    skipUnwrap?: boolean
-    skipAuthMemId?: boolean
-  })
-
-  if (data.code !== 200 || !data.Data?.RedirectUrl) {
-    throw new Error(data.message || 'login failed')
-  }
-  const redirectUrl = data.Data.RedirectUrl
-  const memId = memIdFromRedirectUrl(redirectUrl)
-  if (!memId) {
-    throw new Error('MemID missing in RedirectUrl')
-  }
-  localStorage.setItem('token', memId)
+export async function bootstrapWorldcupAuth(_user: string): Promise<void> {
+  await instance.post('/user/index', new FormData())
   cancelDeferredSessionExpiredNavigation()
-  return redirectUrl
 }
 
 export default instance;

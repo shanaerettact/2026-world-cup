@@ -41,6 +41,9 @@ export const useUserStore = defineStore('user', () => {
   const memberLevel = ref('')
   const memberSinceRaw = ref('')
   const betHistoryMenuBadge = ref('')
+  const selfie = ref('')
+  const verify = ref(0)
+  const session = ref('')
 
   const fetchUserInfo = async () => {
     const applyUser = (payload: unknown) => {
@@ -78,6 +81,11 @@ export const useUserStore = defineStore('user', () => {
       )
       betHistoryMenuBadge.value =
         pending != null && pending > 0 ? String(pending) : ''
+
+      selfie.value = strFromApi(user.selfie)
+      const verifyNum = numFromApi(user.verify)
+      if (verifyNum != null) verify.value = verifyNum
+      session.value = strFromApi(user.session)
     }
     try {
       applyUser(await getUserInfo())
@@ -88,7 +96,6 @@ export const useUserStore = defineStore('user', () => {
         return
       }
       try {
-        localStorage.removeItem('token')
         await bootstrapWorldcupAuth(loginUserForRelogin())
         applyUser(await getUserInfo())
       } catch (e) {
@@ -158,6 +165,9 @@ export const useUserStore = defineStore('user', () => {
     memberLevel,
     memberSinceRaw,
     betHistoryMenuBadge,
+    selfie,
+    verify,
+    session,
     formattedBalance,
     deposit,
     deductBalance,

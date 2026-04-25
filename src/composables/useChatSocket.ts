@@ -1,5 +1,6 @@
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useChatStore } from '@/stores/chatStore'
+import { useUserStore } from '@/stores/userStore'
 
 
 
@@ -23,16 +24,15 @@ const avatarColors = [
   '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316'
 ]
 
-const CHAT_WS_TOKEN = 'JkqxFDm7JYLP'
-
-const getChatWsUrl = () =>
-  `wss://worldcup.jfshield.com/ws/login?token=${encodeURIComponent(CHAT_WS_TOKEN)}`
+const getChatWsUrl = (sessionToken: string) =>
+  `wss://worldcup.jfshield.com/ws/login?token=${encodeURIComponent(sessionToken)}`
 
 const HEARTBEAT_MS = 3_000
 
 /** 後端登入成功判斷（可依實際回傳欄位微調） */
 function isLoginSuccessResponse(r: any): boolean {
   if (r.type === 'error') return false
+  if (r.type === 'connected') return true
   if (r.success === true || r.loginSuccess === true) return true
   if (r.type === 'login' && r.success === true) return true
   if (r.type === 'system' && (r.code === 0 || r.code === 200)) return true
@@ -48,9 +48,9 @@ function isLoginSuccessResponse(r: any): boolean {
 
 export function useChatSocket() {
   const chatStore = useChatStore()
+  const userStore = useUserStore()
   const wsConnected = ref(false)
   const loginAcknowledged = ref(false)
-  const wsUrl = getChatWsUrl()
   const messages = ref<any[]>([])
   let intervalId: ReturnType<typeof setInterval> | null = null
 
@@ -94,8 +94,15 @@ export function useChatSocket() {
 
   onMounted(() => {
     connect()
-    initWebSocket();
+    if (userStore.session) {
+      initWebSocket()
+    }
+  })
 
+  watch(() => userStore.session, (newSession) => {
+    if (newSession && !socket.value) {
+      initWebSocket()
+    }
   })
 
   onUnmounted(() => {
@@ -124,12 +131,18 @@ export function useChatSocket() {
   }
 
   const initWebSocket = () => {
+    const sessionToken = userStore.session
+    if (!sessionToken) {
+      console.warn('尚未取得 session token，無法連線聊天室')
+      return
+    }
+    const wsUrl = getChatWsUrl(sessionToken)
     socket.value = new WebSocket(wsUrl);
     socket.value.onopen = () => {
       wsConnected.value = true
       loginAcknowledged.value = true
       startHeartbeat()
-      console.log('WebSocket 已連線（token 透過 URL 驗證，不需額外 send）');
+      console.log('WebSocket 已連線（使用 user.session token）');
     };
 
     socket.value.onmessage = (event) => {

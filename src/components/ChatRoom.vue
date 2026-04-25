@@ -5,14 +5,14 @@ import { useChatStore } from '@/stores/chatStore'
 import { useChatSocket } from '@/composables/useChatSocket'
 
 const chatStore = useChatStore()
-const { wsConnected, loginAcknowledged, sendChatMessage } = useChatSocket()
+const { wsConnected, sendChatMessage } = useChatSocket()
 
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 
 const sendMessage = () => {
   const text = messageInput.value.trim()
-  if (!text || !loginAcknowledged.value) return
+  if (!text) return
   chatStore.sendMessage(text)
   sendChatMessage(text)
   messageInput.value = ''
@@ -140,7 +140,7 @@ onMounted(() => {
               />
               <button
                 type="submit"
-                :disabled="!loginAcknowledged || !messageInput.trim()"
+                :disabled="!messageInput.trim()"
                 class="w-12 h-12 rounded-xl flex items-center justify-center
                        bg-gradient-to-r from-primary to-primary-light
                        text-white shadow-lg shadow-primary/20

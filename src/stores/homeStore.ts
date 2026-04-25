@@ -64,16 +64,10 @@ export const useHomeStore = defineStore('home', () => {
   const fetchHomeData = async () => {
     if (fetchHomeDataInFlight) return fetchHomeDataInFlight
     fetchHomeDataInFlight = (async () => {
-      const ensureToken = async () => {
-        if (!localStorage.getItem('token')) {
-          await bootstrapWorldcupAuth(loginUserForRelogin())
-        }
-      }
       const loadOnce = async () => {
         homeData.value = await getHomeData()
       }
       try {
-        await ensureToken()
         await loadOnce()
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error)
