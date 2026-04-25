@@ -2,39 +2,32 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useChatStore } from '@/stores/chatStore'
 import { useUserStore } from '@/stores/userStore'
 
-
-
-
-interface ChatMessage {
-  id: number
-  user: string
-  avatar: string
-  message: string
-  time: string
-}
-
-const usernames = [
-  'BetMaster99', 'LuckyStrike', 'GoalHunter', 'OddsFinder', 'WinnerTakes',
-  'BrazilFan2026', 'FootballKing', 'ParlayPro', 'MatchDay', 'GoldenBoot',
-  'ChampionBet', 'ScorePredictor', 'LiveBetter', 'TrophyHunter', 'FinalWhistle'
-]
-
 const avatarColors = [
   '#4e80ee', '#6aa1ff', '#10b981', '#f59e0b', '#ef4444',
   '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316'
 ]
 
-const getChatWsUrl = (sessionToken: string) =>
-  `wss://worldcup.jfshield.com/ws/login?token=${encodeURIComponent(sessionToken)}`
+type WsMessage = {
+  type?: string
+  data?: unknown
+  code?: number
+  success?: boolean
+  loginSuccess?: boolean
+}
 
-const HEARTBEAT_MS = 3_000
+const getChatWsUrl = () => 'wss://worldcup.jfshield.com/ws/'
+const HEARTBEAT_MS = 5_000
+const RECONNECT_MS = 2_000
+
+function sendWs(socket: WebSocket, type: string, data: unknown) {
+  socket.send(JSON.stringify({ type, data }))
+}
 
 /** 後端登入成功判斷（可依實際回傳欄位微調） */
-function isLoginSuccessResponse(r: any): boolean {
+function isLoginSuccessResponse(r: WsMessage): boolean {
   if (r.type === 'error') return false
   if (r.type === 'connected') return true
   if (r.success === true || r.loginSuccess === true) return true
-  if (r.type === 'login' && r.success === true) return true
   if (r.type === 'system' && (r.code === 0 || r.code === 200)) return true
   if (
     r.type === 'system' &&
@@ -46,54 +39,31 @@ function isLoginSuccessResponse(r: any): boolean {
   return false
 }
 
+function isHeartbeatResponse(r: WsMessage): boolean {
+  return r.type === 'heartbeat' || r.data === 'PONG'
+}
+
+function speakText(data: unknown): string {
+  if (Array.isArray(data)) return data.map((item) => String(item)).join('\n')
+  if (data == null) return ''
+  return String(data)
+}
+
 export function useChatSocket() {
   const chatStore = useChatStore()
   const userStore = useUserStore()
   const wsConnected = ref(false)
   const loginAcknowledged = ref(false)
-  const messages = ref<any[]>([])
-  let intervalId: ReturnType<typeof setInterval> | null = null
+  const messages = ref<WsMessage[]>([])
+  let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let disposed = false
 
-  const generateMessage = (): ChatMessage => {
-    const user = usernames[Math.floor(Math.random() * usernames.length)]
-    const pool = messages.value
-    const raw = pool.length === 0 ? null : pool[Math.floor(Math.random() * pool.length)]
-    const message =
-      raw == null
-        ? '…'
-        : typeof raw === 'string'
-          ? raw
-          : (raw?.message != null ? String(raw.message) : JSON.stringify(raw))
-    const color = avatarColors[Math.floor(Math.random() * avatarColors.length)]
-    
-    return {
-      id: Date.now() + Math.random(),
-      user,
-      avatar: color,
-      message,
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    }
-  }
+  const connect = () => initWebSocket()
 
-  const connect = () => {
-    for (let i = 0; i < 5; i++) {
-      chatStore.addMessage(generateMessage())
-    }
-
-    intervalId = setInterval(() => {
-      chatStore.addMessage(generateMessage())
-    }, 2000 + Math.random() * 2000)
-  }
-
-  const disconnect = () => {
-    if (intervalId) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-  }
+  const disconnect = () => closeSocket()
 
   onMounted(() => {
-    connect()
     if (userStore.session) {
       initWebSocket()
     }
@@ -106,13 +76,13 @@ export function useChatSocket() {
   })
 
   onUnmounted(() => {
+    disposed = true
     disconnect()
     stopHeartbeat()
-    if (socket.value) socket.value.close()
+    stopReconnect()
   })
 
   const socket = ref<WebSocket | null>(null)
-  let heartbeatTimer: ReturnType<typeof setInterval> | null = null
 
   const stopHeartbeat = () => {
     if (heartbeatTimer) {
@@ -124,10 +94,28 @@ export function useChatSocket() {
   const startHeartbeat = () => {
     stopHeartbeat()
     heartbeatTimer = setInterval(() => {
-      if (socket.value && socket.value.readyState === WebSocket.OPEN) {
-        socket.value.send(JSON.stringify({ type: 'heartbeat', data: 'PING' }))
+      if (socket.value?.readyState === WebSocket.OPEN) {
+        sendWs(socket.value, 'heartbeat', 'PING')
       }
     }, HEARTBEAT_MS)
+  }
+
+  const stopReconnect = () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+  }
+
+  const closeSocket = () => {
+    stopHeartbeat()
+    stopReconnect()
+    if (socket.value) {
+      socket.value.close()
+      socket.value = null
+    }
+    wsConnected.value = false
+    loginAcknowledged.value = false
   }
 
   const initWebSocket = () => {
@@ -136,21 +124,29 @@ export function useChatSocket() {
       console.warn('尚未取得 session token，無法連線聊天室')
       return
     }
-    const wsUrl = getChatWsUrl(sessionToken)
+    if (
+      socket.value &&
+      (socket.value.readyState === WebSocket.OPEN ||
+        socket.value.readyState === WebSocket.CONNECTING)
+    ) {
+      return
+    }
+    stopReconnect()
+    const wsUrl = getChatWsUrl()
     socket.value = new WebSocket(wsUrl);
     socket.value.onopen = () => {
       wsConnected.value = true
-      loginAcknowledged.value = true
+      loginAcknowledged.value = false
+      sendWs(socket.value as WebSocket, 'login', sessionToken)
       startHeartbeat()
-      console.log('WebSocket 已連線（使用 user.session token）');
+      console.log('WebSocket 已連線，已送出 login');
     };
 
     socket.value.onmessage = (event) => {
-      const response = JSON.parse(event.data) as any
-      startHeartbeat()
-      // if (response.type === 'heartbeat' || response.data === 'PONG') {
-      //   return
-      // }
+      const response = JSON.parse(event.data) as WsMessage
+      if (isHeartbeatResponse(response)) {
+        return
+      }
       if (response.type === 'error') {
         loginAcknowledged.value = false
       } else if (isLoginSuccessResponse(response)) {
@@ -159,6 +155,18 @@ export function useChatSocket() {
       }
       console.log('收到伺服器訊息:', response);
       messages.value.push(response);
+      if (response.type === 'speak') {
+        const message = speakText(response.data)
+        if (message) {
+          chatStore.addMessage({
+            id: Date.now() + Math.random(),
+            user: 'Chat',
+            avatar: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+            message,
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          })
+        }
+      }
     };
 
     socket.value.onerror = (error) => {
@@ -169,20 +177,28 @@ export function useChatSocket() {
       wsConnected.value = false
       loginAcknowledged.value = false
       stopHeartbeat()
+      socket.value = null
       console.log('WebSocket 已斷開', { code: ev.code, reason: ev.reason, wasClean: ev.wasClean })
-
+      if (!disposed && userStore.session) {
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          initWebSocket()
+        }, RECONNECT_MS)
+      }
     };
   };
 
   const sendChatMessage = (text: string) => {
+    if (!socket.value || socket.value.readyState !== WebSocket.OPEN) {
+      initWebSocket()
+      console.warn('WebSocket 尚未連線，已嘗試重新連線')
+      return
+    }
     if (!loginAcknowledged.value) {
       console.warn('尚未收到登入成功回覆，已阻擋送出')
       return
     }
-    if (!socket.value || socket.value.readyState !== WebSocket.OPEN) return
-    const payload = JSON.stringify({ type: 'speak', data: text })
-    console.log('[speak]', payload)
-    socket.value.send(payload)
+    sendWs(socket.value, 'speak', text)
   }
 
   return {
