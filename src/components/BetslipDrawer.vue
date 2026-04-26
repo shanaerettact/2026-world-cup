@@ -22,7 +22,7 @@ function displaySelectionLabel(s: BetSelection): string {
 }
 
 const betSlipStore = useBetSlipStore()
-const { stake } = storeToRefs(betSlipStore)
+const { stake, purchaseInsurance } = storeToRefs(betSlipStore)
 
 const showPurchaseInsurance = computed(
   () => betSlipStore.siteGame?.list?.[0]?.escape === '1'
@@ -36,7 +36,8 @@ function pctToNumber(s: string | undefined): number {
 }
 
 const showInsuranceBreakdown = computed(
-  () => showPurchaseInsurance.value && activePeriod.value != null
+  () =>
+    purchaseInsurance.value && showPurchaseInsurance.value && activePeriod.value != null
 )
 
 const insuranceFeeAmount = computed(() => {
@@ -232,7 +233,22 @@ watch(
                   {{ betSlipStore.totalOdds.toFixed(2) }}
                 </span>
               </div>
-              <template v-if="showPurchaseInsurance">
+              <label
+                v-if="showPurchaseInsurance"
+                class="flex items-start gap-3 p-3 rounded-xl border border-[var(--color-border)]
+                       bg-[var(--color-bg)] cursor-pointer"
+              >
+                <input
+                  v-model="purchaseInsurance"
+                  type="checkbox"
+                  class="mt-0.5 w-4 h-4 rounded border-[var(--color-border)]
+                         text-primary focus:ring-primary/30 shrink-0"
+                />
+                <span class="text-sm text-[var(--color-text)] leading-snug">
+                  {{ $t('betSlip.insurance.label') }}
+                </span>
+              </label>
+              <template v-if="showInsuranceBreakdown">
                 <div class="flex items-start justify-between gap-2 text-sm">
                   <div class="min-w-0">
                     <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
