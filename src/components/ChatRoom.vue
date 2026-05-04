@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue'
-import { X, Send, Users } from 'lucide-vue-next'
+import { X, Send, Users, AlertTriangle } from 'lucide-vue-next'
 import { useChatStore } from '@/stores/chatStore'
 import { useChatSocket } from '@/composables/useChatSocket'
 
 const chatStore = useChatStore()
-const { wsConnected, sendChatMessage } = useChatSocket()
+const {
+  wsConnected,
+  sendChatMessage,
+  warningMessage,
+  clearWarningMessage,
+  connect,
+  disconnect,
+} = useChatSocket()
 
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
@@ -16,6 +23,12 @@ const sendMessage = () => {
   chatStore.sendMessage(text)
   sendChatMessage(text)
   messageInput.value = ''
+}
+
+const handleWarningAcknowledge = () => {
+  clearWarningMessage()
+  disconnect()
+  connect()
 }
 
 const scrollToBottom = () => {
@@ -44,6 +57,33 @@ onMounted(() => {
 
 <template>
   <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="warningMessage"
+        class="fixed inset-0 z-[90] bg-black/45 backdrop-blur-md flex items-center justify-center p-4"
+        @click="handleWarningAcknowledge"
+      >
+        <div
+          class="w-full max-w-xs rounded-2xl border border-warning/30 bg-white/10 backdrop-blur-xl
+                 shadow-2xl shadow-black/30 p-4"
+          @click.stop
+        >
+          <div class="flex items-center gap-2 text-warning mb-2">
+            <AlertTriangle class="w-5 h-5" />
+            <p class="font-semibold">警告</p>
+          </div>
+          <p class="text-sm text-white/95 leading-relaxed">{{ warningMessage }}</p>
+          <button
+            class="mt-4 w-full py-2 rounded-xl font-medium bg-warning/80 text-black
+                   hover:bg-warning transition-colors"
+            @click="handleWarningAcknowledge"
+          >
+            知道了
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Backdrop -->
     <Transition name="fade">
       <div
@@ -100,28 +140,47 @@ onMounted(() => {
             <div
               v-for="message in chatStore.messages"
               :key="message.id"
-              class="flex gap-3 animate-fade-scale"
+              class="flex animate-fade-scale"
+              :class="message.user === 'You' ? 'justify-end' : 'justify-start'"
             >
-              <!-- Avatar -->
               <div
-                class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
-                :style="{ backgroundColor: message.avatar }"
+                class="flex items-end gap-2 max-w-[84%]"
+                :class="message.user === 'You' ? 'justify-end' : ''"
               >
-                {{ message.user.charAt(0).toUpperCase() }}
-              </div>
-              
-              <!-- Content -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-baseline gap-2 mb-0.5">
-                  <span 
-                    class="text-sm font-semibold"
-                    :class="message.user === 'You' ? 'text-primary' : 'text-[var(--color-text)]'"
-                  >
-                    {{ message.user === 'You' ? $t('chat.you') : message.user }}
-                  </span>
-                  <span class="text-[10px] text-[var(--color-muted)]">{{ message.time }}</span>
+                <!-- Avatar -->
+                <div
+                  class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                  :style="{ backgroundColor: message.avatar }"
+                >
+                  {{ message.user.charAt(0).toUpperCase() }}
                 </div>
-                <p class="text-sm text-[var(--color-text)] break-words">{{ message.message }}</p>
+
+                <!-- Content -->
+                <div class="min-w-0" :class="message.user === 'You' ? 'text-right' : ''">
+                  <div
+                    class="flex items-baseline gap-2 mb-1"
+                    :class="message.user === 'You' ? 'justify-end' : ''"
+                  >
+                    <span
+                      class="text-xs font-semibold"
+                      :class="message.user === 'You' ? 'text-primary-light' : 'text-[var(--color-text)]'"
+                    >
+                      {{ message.user === 'You' ? $t('chat.you') : message.user }}
+                    </span>
+                    <span class="text-[10px] text-[var(--color-muted)]">{{ message.time }}</span>
+                  </div>
+
+                  <div
+                    class="px-3 py-2 rounded-2xl text-sm break-words shadow-sm"
+                    :class="
+                      message.user === 'You'
+                        ? 'bg-gradient-to-r from-primary to-primary-light text-white'
+                        : 'bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border)]'
+                    "
+                  >
+                    {{ message.message }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

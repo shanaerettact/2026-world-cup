@@ -32,12 +32,11 @@ function scheduleSessionExpiredNavigationIfStillLoggedOut() {
 
 function unwrapApiBody(body: unknown) {
   if (body != null && typeof body === 'object' && 'code' in body) {
-    const { code, msg, message, data, Data } = body as {
+    const { code, msg, message, data } = body as {
       code: number
       msg?: string
       message?: string
       data?: unknown
-      Data?: unknown
     }
     const isSuccess = code === 1 || code === 200
     if (!isSuccess) {
@@ -46,7 +45,7 @@ function unwrapApiBody(body: unknown) {
       }
       return Promise.reject(new Error(msg || message || `code ${code}`))
     }
-    return data !== undefined ? data : Data
+    return data
   }
   return body
 }
@@ -70,8 +69,12 @@ instance.interceptors.response.use(
   }
 )
 
-export async function bootstrapWorldcupAuth(_user: string): Promise<void> {
-  await instance.post('/user/index', new FormData())
+export async function bootstrapWorldcupAuth(user: string): Promise<void> {
+  const formData = new FormData()
+  if (user) {
+    formData.append('user', user)
+  }
+  await instance.post('/user/index', formData)
   cancelDeferredSessionExpiredNavigation()
 }
 
