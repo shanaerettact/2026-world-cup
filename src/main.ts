@@ -4,6 +4,7 @@ import router from './router'
 import App from './App.vue'
 import { i18n } from './i18n'
 import { bootstrapTempTestLogin } from './services/api/tempLoginApi'
+// import {bootstrapWorldcupAuth} from './utils/request'
 import { useUserStore } from './stores/userStore'
 import './styles/main.css'
 import 'remixicon/fonts/remixicon.css'
@@ -24,6 +25,7 @@ window.addEventListener('worldcup:session-expired', () => {
 ;(async () => {
   try {
     await bootstrapTempTestLogin(loginUser)
+    // await bootstrapWorldcupAuth(loginUser)
     await useUserStore(pinia).fetchUserInfo()
   } catch (e) {
     console.error(e)

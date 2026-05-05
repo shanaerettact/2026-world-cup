@@ -33,20 +33,27 @@ function scheduleSessionExpiredNavigationIfStillLoggedOut() {
 
 function unwrapApiBody(body: unknown) {
   if (body != null && typeof body === 'object' && 'code' in body) {
-    const { code, msg, message, data } = body as {
+    const b = body as Record<string, unknown> & {
       code: number
       msg?: string
       message?: string
       data?: unknown
     }
-    const isSuccess = code === 1 || code === 200
+    const payload =
+      b.data !== undefined ? b.data : b.Data !== undefined ? b.Data : undefined
+    const errText =
+      (typeof b.msg === 'string' && b.msg) ||
+      (typeof b.message === 'string' && b.message) ||
+      (typeof b.Message === 'string' ? b.Message : '') ||
+      ''
+    const isSuccess = b.code === 1 || b.code === 200
     if (!isSuccess) {
-      if (code === API_CODE_SESSION_EXPIRED) {
+      if (b.code === API_CODE_SESSION_EXPIRED) {
         scheduleSessionExpiredNavigationIfStillLoggedOut()
       }
-      return Promise.reject(new Error(msg || message || `code ${code}`))
+      return Promise.reject(new Error(errText || `code ${b.code}`))
     }
-    return data
+    return payload
   }
   return body
 }

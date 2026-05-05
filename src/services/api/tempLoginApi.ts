@@ -1,7 +1,8 @@
 import request, { cancelDeferredSessionExpiredNavigation } from '@/utils/request'
 
 /** 暫時登入：可改此常數，或在呼叫 fetchTempLogin / bootstrapTempTestLogin 時傳入 user */
-export const TEMP_LOGIN_USER = 'visitor004'
+export const TEMP_LOGIN_USER = 'user01'
+// export const TEMP_LOGIN_USER = 'visitor004'
 
 type RawLoginResponse = {
   code?: number
@@ -76,6 +77,8 @@ export async function bootstrapTempTestLogin(user: string = TEMP_LOGIN_USER) {
   const pathQuery = redirectPathAndQuery(redirectUrl, memId)
   await request.get(pathQuery, {
     skipUnwrap: true,
+    maxRedirects: 0,
+    validateStatus: (s: number) => s < 400,
     headers: { Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8' },
   } as Parameters<typeof request.get>[1])
 
