@@ -43,6 +43,38 @@
     "account": "Account",
     "chat": "Chat"
   },
+  "bottomNav": {
+    "specialMarkets": "Special Markets",
+    "openBettingMarketsAria": "Open special markets",
+    "verify": {
+      "modal": {
+        "title": {
+          "form": "Verification Form",
+          "status": "Review Status"
+        },
+        "message": {
+          "pending": "Under review",
+          "rejected": "Verification failed, please contact customer support"
+        },
+        "closeAria": "Close dialog"
+      },
+      "form": {
+        "idLabel": "ID",
+        "idPlaceholder": "Enter ID",
+        "avatarLabel": "Profile Photo",
+        "avatarUpload": "Upload image file",
+        "zipping": "Converting...",
+        "autoZipHint": "Automatically convert to zip after upload",
+        "zippedDone": "Converted: {file}"
+      },
+      "error": {
+        "uploadImageOnly": "Please upload an image file",
+        "zipFailed": "Failed to convert image, please upload again",
+        "statusInvalid": "Invalid verification status, please try again later",
+        "statusFetchFailed": "Failed to fetch verification status, please try again later"
+      }
+    }
+  },
   "home": {
     "hero": {
       "tournament": "FIFA World Cup",
