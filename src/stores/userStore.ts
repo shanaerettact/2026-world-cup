@@ -4,7 +4,7 @@ import { getUserInfo } from '@/services/api/userApi'
 import { bootstrapWorldcupAuth } from '@/utils/request'
 
 const loginUserForRelogin = () =>
-  import.meta.env.VITE_LOGIN_USER || 'user01'
+  import.meta.env.VITE_LOGIN_USER || 'visitor004'
 
 function pickUserRecord(payload: unknown): Record<string, unknown> | null {
   if (payload == null || typeof payload !== 'object' || Array.isArray(payload)) return null

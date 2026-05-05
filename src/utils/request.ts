@@ -3,6 +3,7 @@ import axios from 'axios';
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : '/'), 
   timeout: 30000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
     "X-Requested-With": "XMLHttpRequest",

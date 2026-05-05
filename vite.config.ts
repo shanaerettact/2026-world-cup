@@ -13,6 +13,20 @@ export default defineConfig({
         target: 'https://worldcup.jfshield.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            const raw = proxyRes.headers['set-cookie']
+            if (!raw) return
+            const cookies = Array.isArray(raw) ? raw : [raw]
+            proxyRes.headers['set-cookie'] = cookies.map((cookie) =>
+              cookie
+                .replace(/;\s*Domain=[^;]+/gi, '')
+                .replace(/;\s*Secure/gi, '')
+                .replace(/;\s*SameSite=\s*[^;]+/gi, '; SameSite=Lax')
+                .replace(/;\s*Partitioned/gi, ''),
+            )
+          })
+        },
       },
     },
   },
