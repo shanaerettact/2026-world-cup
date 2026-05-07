@@ -67,9 +67,15 @@
         "autoZipHint": "上傳後自動轉為 zip",
         "zippedDone": "已轉檔：{file}"
       },
+      "validation": {
+        "idRequired": "請輸入 ID",
+        "avatarRequired": "請上傳大頭照（將自動轉為 zip）",
+        "avatarZipping": "請等待圖片轉檔完成"
+      },
       "error": {
         "uploadImageOnly": "請上傳圖片檔案",
         "zipFailed": "大頭照轉檔失敗，請重新上傳",
+        "submitFailed": "送出驗證失敗，請稍後再試",
         "statusInvalid": "驗證狀態異常，請稍後再試",
         "statusFetchFailed": "驗證狀態取得失敗，請稍後再試"
       }

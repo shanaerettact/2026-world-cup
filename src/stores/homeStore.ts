@@ -44,7 +44,7 @@ export function gameToFeaturedCardView(g: Game): FeaturedCardView {
   }
 }
 
-const loginUserForRelogin = () => import.meta.env.VITE_LOGIN_USER || 'visitor004'
+const loginUserForRelogin = () => import.meta.env.VITE_LOGIN_USER || 'user01'
 
 function isAuthRecoverableMessage(msg: string) {
   return (

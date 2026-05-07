@@ -67,9 +67,15 @@
         "autoZipHint": "Automatically convert to zip after upload",
         "zippedDone": "Converted: {file}"
       },
+      "validation": {
+        "idRequired": "Please enter your ID",
+        "avatarRequired": "Please upload a profile photo (converted to zip automatically)",
+        "avatarZipping": "Please wait for the image conversion to finish"
+      },
       "error": {
         "uploadImageOnly": "Please upload an image file",
         "zipFailed": "Failed to convert image, please upload again",
+        "submitFailed": "Failed to submit verification, please try again later",
         "statusInvalid": "Invalid verification status, please try again later",
         "statusFetchFailed": "Failed to fetch verification status, please try again later"
       }

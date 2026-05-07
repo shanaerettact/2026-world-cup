@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, Upload } from 'lucide-vue-next'
 import JSZip from 'jszip'
+import { useVerifyStore } from '@/stores/verifyStore'
+import { useUserStore } from '@/stores/userStore'
 
 const props = defineProps<{
   open: boolean
@@ -16,6 +18,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const verifyStore = useVerifyStore()
+const userStore = useUserStore()
 
 const verifyFormId = ref('')
 const originalAvatarName = ref('')
@@ -23,6 +27,9 @@ const zippedAvatarName = ref('')
 const zippedAvatarFile = ref<File | null>(null)
 const zipInfo = ref('')
 const avatarError = ref('')
+const idFieldError = ref('')
+const avatarFieldError = ref('')
+const submitError = ref('')
 const isZippingAvatar = ref(false)
 
 const UNITS = ['B', 'KB', 'MB', 'GB'] as const
@@ -41,17 +48,27 @@ function resetForm() {
   zippedAvatarFile.value = null
   zipInfo.value = ''
   avatarError.value = ''
+  idFieldError.value = ''
+  avatarFieldError.value = ''
+  submitError.value = ''
   isZippingAvatar.value = false
 }
 
 watch(() => props.open, (open) => {
-  if (!open) resetForm()
+  if (open) {
+    submitError.value = ''
+    idFieldError.value = ''
+    avatarFieldError.value = ''
+  } else {
+    resetForm()
+  }
 })
 
 async function handleAvatarFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   avatarError.value = ''
+  avatarFieldError.value = ''
   zipInfo.value = ''
   zippedAvatarFile.value = null
   originalAvatarName.value = ''
@@ -88,18 +105,46 @@ async function handleAvatarFileChange(event: Event) {
   }
 }
 
-const canSubmit = computed(
-  () => verifyFormId.value.trim().length > 0 && zippedAvatarFile.value != null && !isZippingAvatar.value,
-)
+function validateFields(): boolean {
+  idFieldError.value = ''
+  avatarFieldError.value = ''
+  let ok = true
+  if (!verifyFormId.value.trim()) {
+    idFieldError.value = t('bottomNav.verify.validation.idRequired')
+    ok = false
+  }
+  if (isZippingAvatar.value) {
+    avatarFieldError.value = t('bottomNav.verify.validation.avatarZipping')
+    ok = false
+  } else if (!zippedAvatarFile.value) {
+    avatarFieldError.value = t('bottomNav.verify.validation.avatarRequired')
+    ok = false
+  }
+  return ok
+}
 
 function closeModal() {
   emit('close')
 }
 
-function handleSubmit() {
-  if (!canSubmit.value) return
-  // TODO: call actual submit API
-  emit('close')
+async function handleSubmit() {
+  if (verifyStore.isSubmitting) return
+  submitError.value = ''
+  if (!validateFields()) return
+  const file = zippedAvatarFile.value
+  if (!file) return
+  try {
+    await verifyStore.submitVerification({
+      id: verifyFormId.value.trim(),
+      selfie: file,
+    })
+    await userStore.fetchUserInfo()
+    closeModal()
+  } catch (e) {
+    submitError.value =
+      e instanceof Error && e.message ? e.message : t('bottomNav.verify.error.submitFailed')
+    console.error(e)
+  }
 }
 </script>
 
@@ -141,10 +186,22 @@ function handleSubmit() {
                   v-model="verifyFormId"
                   type="text"
                   :placeholder="$t('bottomNav.verify.form.idPlaceholder')"
-                  class="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)]
-                         px-3 py-2.5 text-sm text-[var(--color-text)] outline-none
-                         focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
+                  :aria-invalid="!!idFieldError"
+                  class="w-full rounded-xl border bg-[var(--color-bg)] px-3 py-2.5 text-sm
+                         text-[var(--color-text)] outline-none transition-[box-shadow,border-color]"
+                  :class="idFieldError
+                    ? 'border-danger/45 ring-2 ring-danger/15 focus:ring-danger/25 focus:border-danger/50'
+                    : 'border-[var(--color-border)] focus:ring-2 focus:ring-primary/30 focus:border-primary/40'"
+                  @input="idFieldError = ''"
                 >
+                <p
+                  v-if="idFieldError"
+                  class="mt-1.5 text-xs text-danger font-medium leading-relaxed
+                         rounded-lg px-2.5 py-1.5 border border-danger/20 bg-danger/5"
+                  role="alert"
+                >
+                  {{ idFieldError }}
+                </p>
               </div>
 
               <div class="space-y-2">
@@ -152,9 +209,11 @@ function handleSubmit() {
                   {{ $t('bottomNav.verify.form.avatarLabel') }}
                 </label>
                 <label
-                  class="w-full rounded-xl border border-dashed border-[var(--color-border)]
-                         bg-[var(--color-bg)] px-3 py-4 flex items-center justify-between gap-3
-                         cursor-pointer hover:border-primary/40 transition-colors"
+                  class="w-full rounded-xl border border-dashed bg-[var(--color-bg)] px-3 py-4
+                         flex items-center justify-between gap-3 cursor-pointer transition-colors"
+                  :class="avatarFieldError
+                    ? 'border-danger/45 ring-2 ring-danger/15 hover:border-danger/55'
+                    : 'border-[var(--color-border)] hover:border-primary/40'"
                 >
                   <div class="min-w-0">
                     <p class="text-sm font-medium text-[var(--color-text)] truncate">
@@ -167,10 +226,34 @@ function handleSubmit() {
                   <Upload class="w-5 h-5 text-primary shrink-0" />
                   <input type="file" accept="image/*" class="hidden" @change="handleAvatarFileChange">
                 </label>
-                <p v-if="avatarError" class="text-xs text-danger" role="alert">{{ avatarError }}</p>
-                <p v-else-if="zippedAvatarName" class="text-xs text-success">
+                <p
+                  v-if="avatarError"
+                  class="text-xs text-danger font-medium leading-relaxed rounded-lg px-2.5 py-1.5
+                         border border-danger/20 bg-danger/5"
+                  role="alert"
+                >
+                  {{ avatarError }}
+                </p>
+                <p v-else-if="zippedAvatarName" class="text-xs text-success font-medium">
                   {{ $t('bottomNav.verify.form.zippedDone', { file: zippedAvatarName }) }}
                 </p>
+                <p
+                  v-if="avatarFieldError && !avatarError"
+                  class="text-xs text-danger font-medium leading-relaxed rounded-lg px-2.5 py-1.5
+                         border border-danger/20 bg-danger/5"
+                  role="alert"
+                >
+                  {{ avatarFieldError }}
+                </p>
+              </div>
+
+              <div
+                v-if="submitError"
+                class="rounded-xl px-3 py-2.5 border border-danger/25 bg-danger/10
+                       text-danger text-xs font-medium"
+                role="alert"
+              >
+                {{ submitError }}
               </div>
             </div>
 
@@ -192,7 +275,7 @@ function handleSubmit() {
               <button
                 v-if="mode === 'form'"
                 @click="handleSubmit"
-                :disabled="!canSubmit"
+                :disabled="verifyStore.isSubmitting"
                 class="flex-1 py-3 rounded-xl font-bold text-white
                        bg-gradient-to-r from-primary to-primary-light
                        shadow-lg shadow-primary/25

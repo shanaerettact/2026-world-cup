@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { X, Send, Users, AlertTriangle } from 'lucide-vue-next'
 import { useChatStore } from '@/stores/chatStore'
 import { useChatSocket } from '@/composables/useChatSocket'
 
+const router = useRouter()
 const chatStore = useChatStore()
 const {
   wsConnected,
   sendChatMessage,
   warningMessage,
+  warningRoutesToSessionExpired,
   clearWarningMessage,
   connect,
   disconnect,
@@ -26,8 +29,14 @@ const sendMessage = () => {
 }
 
 const handleWarningAcknowledge = () => {
+  const goSessionExpired = warningRoutesToSessionExpired.value
   clearWarningMessage()
   disconnect()
+  if (goSessionExpired) {
+    chatStore.closeChat()
+    void router.replace({ name: 'session-expired' })
+    return
+  }
   connect()
 }
 

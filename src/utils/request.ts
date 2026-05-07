@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosHeaders, type InternalAxiosRequestConfig } from 'axios';
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : '/'), 
@@ -9,6 +9,15 @@ const instance = axios.create({
     "X-Requested-With": "XMLHttpRequest",
   },
 });
+
+instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (config.data instanceof FormData) {
+    const headers = AxiosHeaders.from(config.headers)
+    headers.delete('Content-Type')
+    config.headers = headers
+  }
+  return config
+})
 
 /** 後端業務 code：例如 4 表示登入失效，應導向登入失效頁 */
 export const API_CODE_SESSION_EXPIRED = 4
@@ -68,9 +77,21 @@ instance.interceptors.response.use(
   },
   (error) => {
     const body = error.response?.data
-    if (body != null && typeof body === 'object' && 'code' in body) {
-      const { msg, message } = body as { msg?: string; message?: string }
-      return Promise.reject(new Error(msg || message || 'request failed'))
+    if (body != null && typeof body === 'object') {
+      const o = body as { code?: unknown; msg?: string; message?: string; Message?: string }
+      if ('code' in o) {
+        const msg =
+          (typeof o.msg === 'string' && o.msg) ||
+          (typeof o.message === 'string' && o.message) ||
+          (typeof o.Message === 'string' ? o.Message : '') ||
+          ''
+        return Promise.reject(new Error(msg || 'request failed'))
+      }
+      const loose =
+        (typeof o.msg === 'string' && o.msg) ||
+        (typeof o.message === 'string' && o.message) ||
+        (typeof o.Message === 'string' ? o.Message : '')
+      if (loose) return Promise.reject(new Error(loose))
     }
     console.error('API Error:', error.response?.status)
     return Promise.reject(error)

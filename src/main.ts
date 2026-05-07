@@ -16,7 +16,7 @@ app.use(pinia)
 app.use(router)
 app.use(i18n)
 
-const loginUser = import.meta.env.VITE_LOGIN_USER || 'visitor004'
+const loginUser = import.meta.env.VITE_LOGIN_USER || 'user01'
 
 window.addEventListener('worldcup:session-expired', () => {
   void router.replace({ name: 'session-expired' })

@@ -50,8 +50,11 @@ function isServerPing(r: WsMessage): boolean {
   return r.type === 'ping' || r.data === 'PING'
 }
 
+function isElsewhereLoginMessage(text: string): boolean {
+  return /其他地方登入/.test(text)
+}
+
 function speakText(data: unknown): string {
-  if (Array.isArray(data)) return data.map((item) => speakText(item)).filter(Boolean).join('\n')
   if (data == null) return ''
   if (typeof data === 'object') {
     const obj = data as Record<string, unknown>
@@ -76,6 +79,7 @@ export function useChatSocket() {
   const loginAcknowledged = ref(false)
   const messages = ref<WsMessage[]>([])
   const warningMessage = ref('')
+  const warningRoutesToSessionExpired = ref(false)
 
   const connect = () => initWebSocket()
 
@@ -144,7 +148,9 @@ export function useChatSocket() {
       }
       if (response.type === 'error') {
         loginAcknowledged.value = false
-        warningMessage.value = speakText(response.data) || '聊天室暫時無法發言'
+        const text = speakText(response.data) || '聊天室暫時無法發言'
+        warningMessage.value = text
+        warningRoutesToSessionExpired.value = isElsewhereLoginMessage(text)
       } else if (isLoginSuccessResponse(response)) {
         loginAcknowledged.value = true
         console.log('登入成功，已允許發言')
@@ -194,6 +200,7 @@ export function useChatSocket() {
 
   const clearWarningMessage = () => {
     warningMessage.value = ''
+    warningRoutesToSessionExpired.value = false
   }
 
   return {
@@ -204,6 +211,7 @@ export function useChatSocket() {
     messages,
     sendChatMessage,
     warningMessage,
+    warningRoutesToSessionExpired,
     clearWarningMessage
   }
 }
