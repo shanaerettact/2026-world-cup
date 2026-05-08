@@ -32,7 +32,7 @@ export function cancelDeferredSessionExpiredNavigation() {
   }
 }
 
-function scheduleSessionExpiredNavigationIfStillLoggedOut() {
+export function scheduleSessionExpiredNavigationIfStillLoggedOut() {
   cancelDeferredSessionExpiredNavigation()
   sessionExpiredNavTimer = setTimeout(() => {
     sessionExpiredNavTimer = null

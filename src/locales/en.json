@@ -101,7 +101,9 @@
     "subtitle": "Your betting records",
     "tabs": {
       "status1": "Open",
-      "status2": "Settled"
+      "status2": "Settled",
+      "specialMarkets": "Special markets",
+      "otherBets": "Other bets"
     },
     "empty": {
       "title": "No Bet History",
@@ -112,7 +114,7 @@
       "won": "Won",
       "lost": "Lost"
     },
-    "betTime": "Bet time: {time}"
+    "recordKindAria": "Record category"
   },
   "account": {
     "profile": {
@@ -171,7 +173,12 @@
       "winTrialLabel": "Insured win profit (estimate)",
       "winTrialSub": "Stake × (odds − 1) × {rate}%",
       "loseTrialLabel": "Insured loss refund (estimate)",
-      "loseTrialSub": "Stake × {rate}%"
+      "loseTrialSub": "Stake × {rate}%",
+      "modalTitleOk": "Done",
+      "modalTitleError": "Notice",
+      "modalAck": "OK",
+      "modalDefaultOk": "Your early exit request was submitted.",
+      "modalDefaultErr": "Something went wrong. Please try again."
     }
   },
   "risk": {

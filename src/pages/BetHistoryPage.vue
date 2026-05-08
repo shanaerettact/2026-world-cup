@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { History, Clock, Trophy, XCircle } from 'lucide-vue-next'
+import { History, Clock, Trophy, XCircle, Star, AlertTriangle, CheckCircle } from 'lucide-vue-next'
 import type { BetRecord } from '@/stores/betSlipStore'
 import { useGameOrderStore } from '@/stores/gameOrderStore'
 import type { BetHistoryData } from '@/schema/gameOrderSchema'
@@ -11,12 +11,43 @@ const gameOrderStore = useGameOrderStore()
 const { locale, t } = useI18n()
 
 type GameOrderStatusFilter = '1' | '2'
+type RecordKindTab = 'special' | 'other'
 const orderStatusFilter = ref<GameOrderStatusFilter>('1')
+const recordKindTab = ref<RecordKindTab>('special')
 const escapeLoadingId = ref<string | null>(null)
 
 const gameOrderList = computed<BetHistoryData['list']>(() => gameOrderStore.gameOrderList ?? [])
 
-/** 年／月／日��時分，依目前語系地區格式 */
+const championPlayMarkers = computed(() => {
+  const s = new Set<string>()
+  for (const x of [
+    t('bettingOptionsModal.championBetType'),
+    '冠軍賽',
+    'Outright',
+    'Champion',
+  ]) {
+    const v = String(x ?? '').trim()
+    if (v) s.add(v)
+  }
+  return s
+})
+
+function isBettingOptionsModalRecord(bet: BetHistoryData['list'][number]) {
+  const pt = String(bet.play_title ?? '').trim()
+  const ct = String(bet.class_title ?? '').trim()
+  const markers = championPlayMarkers.value
+  if (markers.has(pt) || markers.has(ct)) return true
+  if (/^champion$/i.test(pt) || /^champion$/i.test(ct)) return true
+  return false
+}
+
+const filteredGameOrderList = computed(() => {
+  const src = gameOrderList.value
+  if (recordKindTab.value === 'special') return src.filter(isBettingOptionsModalRecord)
+  return src.filter((b) => !isBettingOptionsModalRecord(b))
+})
+
+/** 年／月／日、時分，依目前語系地區格式 */
 function formatBetDateTime(ts: number) {
   const d = new Date(ts)
   return new Intl.DateTimeFormat(locale.value, {
@@ -97,7 +128,7 @@ const statusConfig = (status: BetRecord['status']) => {
   }
 }
 
-/** ��後端一致：yyyy-MM-dd HH:mm:ss（本地時區） */
+/** 與後端一致：yyyy-MM-dd HH:mm:ss（本地時區） */
 function toApiDateTime(d: Date) {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
@@ -128,15 +159,35 @@ function setOrderStatusTab(s: GameOrderStatusFilter) {
   loadGameOrders()
 }
 
+type InsuranceModalVariant = 'ok' | 'error'
+const insuranceModalOpen = ref(false)
+const insuranceModalMessage = ref('')
+const insuranceModalVariant = ref<InsuranceModalVariant>('ok')
+
+function closeInsuranceModal() {
+  insuranceModalOpen.value = false
+}
+
+function showInsuranceApiModal(message: string, variant: InsuranceModalVariant) {
+  const trimmed = message.trim()
+  insuranceModalMessage.value =
+    trimmed ||
+    (variant === 'ok' ? t('betSlip.insurance.modalDefaultOk') : t('betSlip.insurance.modalDefaultErr'))
+  insuranceModalVariant.value = variant
+  insuranceModalOpen.value = true
+}
+
 async function handleBuyInsurance(bet: BetHistoryData['list'][number]) {
   const id = String(bet.id ?? '').trim()
   if (!id) return
   escapeLoadingId.value = id
   try {
-    await getEscapeGame(id)
+    const { message } = await getEscapeGame(id)
     await loadGameOrders()
+    showInsuranceApiModal(message, 'ok')
   } catch (e) {
-    console.error(e)
+    const text = e instanceof Error ? e.message : String(e)
+    showInsuranceApiModal(text, 'error')
   } finally {
     escapeLoadingId.value = null
   }
@@ -161,46 +212,97 @@ onMounted(() => {
       </div>
     </div>
 
-    <div
-      class="flex rounded-xl bg-[var(--color-bg)] p-1 mb-4 border border-[var(--color-border)]"
-      role="tablist"
-    >
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="orderStatusFilter === '1'"
-        class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          orderStatusFilter === '1'
-            ? 'bg-[var(--color-card)] text-white shadow-sm bg-gradient-to-br from-primary to-primary-dark'
-            : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'
-        "
-        @click="setOrderStatusTab('1')"
-      >
-        {{ $t('live.tabs.status1') }}
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="orderStatusFilter === '2'"
-        class="flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          orderStatusFilter === '2'
-            ? 'bg-[var(--color-card)] text-white shadow-sm bg-gradient-to-br from-primary to-primary-dark'
-            : 'text-[var(--color-muted)] hover:text-[var(--color-text)]'
-        "
-        @click="setOrderStatusTab('2')"
-      >
-        {{ $t('live.tabs.status2') }}
-      </button>
+    <!-- Tab Groups Container -->
+    <div class="space-y-3 mb-6">
+      <!-- Status Filter Tabs -->
+      <div class="relative">
+        <div
+          class="flex gap-2 p-1.5 rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] shadow-sm"
+          role="tablist"
+        >
+          <button
+            v-for="status in [{ key: '1', label: 'status1' }, { key: '2', label: 'status2' }] as const"
+            :key="status.key"
+            type="button"
+            role="tab"
+            :aria-selected="orderStatusFilter === status.key"
+            class="relative flex-1 py-3 px-4 rounded-xl text-sm font-semibold
+                   transition-all duration-300 ease-out overflow-hidden group"
+            :class="
+              orderStatusFilter === status.key
+                ? 'text-white scale-[1.02]'
+                : 'text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg)]/50 active:scale-95'
+            "
+            @click="setOrderStatusTab(status.key as GameOrderStatusFilter)"
+          >
+            <span
+              v-if="orderStatusFilter === status.key"
+              class="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary-dark
+                     shadow-lg shadow-primary/25 rounded-xl"
+            />
+            <span
+              v-if="orderStatusFilter === status.key"
+              class="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent rounded-xl"
+            />
+            <span class="relative z-10 flex items-center justify-center gap-2">
+              <Clock v-if="status.key === '1'" class="w-4 h-4" />
+              <Trophy v-else class="w-4 h-4" />
+              {{ $t(`live.tabs.${status.label}`) }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Record Type Tabs -->
+      <div class="relative">
+        <div
+          class="flex gap-2 p-1.5 rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] shadow-sm"
+          role="tablist"
+          :aria-label="$t('live.recordKindAria')"
+        >
+          <button
+            v-for="kind in [{ key: 'special', label: 'specialMarkets' }, { key: 'other', label: 'otherBets' }] as const"
+            :key="kind.key"
+            type="button"
+            role="tab"
+            :aria-selected="recordKindTab === kind.key"
+            class="relative flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold
+                   transition-all duration-300 ease-out overflow-hidden group uppercase tracking-wide"
+            :class="
+              recordKindTab === kind.key
+                ? 'text-white scale-[1.02]'
+                : 'text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg)]/50 active:scale-95'
+            "
+            @click="recordKindTab = kind.key as RecordKindTab"
+          >
+            <span
+              v-if="recordKindTab === kind.key"
+              class="absolute inset-0 rounded-xl"
+              :class="
+                kind.key === 'special'
+                  ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 shadow-lg shadow-amber-500/25'
+                  : 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 shadow-lg shadow-slate-600/25'
+              "
+            />
+            <span
+              v-if="recordKindTab === kind.key"
+              class="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent rounded-xl"
+            />
+            <span class="relative z-10 flex items-center justify-center gap-1.5">
+              <Star v-if="kind.key === 'special'" class="w-3.5 h-3.5" />
+              {{ $t(`live.tabs.${kind.label}`) }}
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <Transition name="page" mode="out-in">
-      <div :key="orderStatusFilter">
+      <div :key="`${orderStatusFilter}-${recordKindTab}`">
         <!-- Bet List -->
-        <div v-if="gameOrderList.length > 0" class="space-y-4">
+        <div v-if="filteredGameOrderList.length > 0" class="space-y-4">
           <div
-            v-for="bet in gameOrderList"
+            v-for="bet in filteredGameOrderList"
             :key="bet.id"
             class="rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] p-4"
           >
@@ -312,6 +414,53 @@ onMounted(() => {
       </div>
     </Transition>
   </div>
+
+  <Teleport to="body">
+    <Transition name="insurance-fade">
+      <div
+        v-if="insuranceModalOpen"
+        class="fixed inset-0 z-[90] bg-black/45 backdrop-blur-md flex items-center justify-center p-4"
+        @click="closeInsuranceModal"
+      >
+        <div
+          class="w-full max-w-xs rounded-2xl border bg-white/10 backdrop-blur-xl
+                 shadow-2xl shadow-black/30 p-4"
+          :class="insuranceModalVariant === 'error' ? 'border-warning/30' : 'border-success/30'"
+          @click.stop
+        >
+          <div
+            class="flex items-center gap-2 mb-2"
+            :class="insuranceModalVariant === 'error' ? 'text-warning' : 'text-success'"
+          >
+            <AlertTriangle v-if="insuranceModalVariant === 'error'" class="w-5 h-5 shrink-0" />
+            <CheckCircle v-else class="w-5 h-5 shrink-0" />
+            <p class="font-semibold">
+              {{
+                insuranceModalVariant === 'error'
+                  ? $t('betSlip.insurance.modalTitleError')
+                  : $t('betSlip.insurance.modalTitleOk')
+              }}
+            </p>
+          </div>
+          <p class="text-sm text-white/95 leading-relaxed whitespace-pre-wrap break-words">
+            {{ insuranceModalMessage }}
+          </p>
+          <button
+            type="button"
+            class="mt-4 w-full py-2 rounded-xl font-medium transition-colors"
+            :class="
+              insuranceModalVariant === 'error'
+                ? 'bg-warning/80 text-black hover:bg-warning'
+                : 'bg-success/80 text-white hover:bg-success'
+            "
+            @click="closeInsuranceModal"
+          >
+            {{ $t('betSlip.insurance.modalAck') }}
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -328,5 +477,15 @@ onMounted(() => {
 .page-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.insurance-fade-enter-active,
+.insurance-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.insurance-fade-enter-from,
+.insurance-fade-leave-to {
+  opacity: 0;
 }
 </style>
