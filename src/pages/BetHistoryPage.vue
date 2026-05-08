@@ -386,7 +386,7 @@ onMounted(() => {
                   </span>
                 </div>
               </div>
-              <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ betTimeLine(new Date(bet.bet_time).getTime()) }}</div>
+              <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ bet.bet_time }}</div>
             </div>
           </template>
           <template v-else>
