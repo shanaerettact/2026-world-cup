@@ -112,7 +112,11 @@
     "status": {
       "pending": "Pending",
       "won": "Won",
-      "lost": "Lost"
+      "lost": "Lost",
+      "draw": "Draw"
+    },
+    "champion": {
+      "resultLabel": "Result: "
     },
     "recordKindAria": "Record category"
   },

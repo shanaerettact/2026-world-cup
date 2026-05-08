@@ -19,7 +19,6 @@ function pickMsg(raw: EscapeGameResponse): string {
   )
 }
 
-/** 成功後回傳後端 msg（可能為空字串） */
 export async function getEscapeGame(id: string): Promise<{ message: string }> {
   const formData = new FormData()
   formData.append('id', id)

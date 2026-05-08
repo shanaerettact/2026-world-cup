@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { History, Clock, Trophy, XCircle, Star, AlertTriangle, CheckCircle } from 'lucide-vue-next'
+import { History, Clock, Trophy, XCircle, Star, AlertTriangle, CheckCircle, Equal } from 'lucide-vue-next'
 import type { BetRecord } from '@/stores/betSlipStore'
 import { useGameOrderStore } from '@/stores/gameOrderStore'
+import { useChampionOrderStore } from '@/stores/championOrderStore'
 import type { BetHistoryData } from '@/schema/gameOrderSchema'
+import type { ChampionOrderRecord } from '@/schema/championOrderSchema'
 import { getEscapeGame } from '@/services/api/escapeGameApi'
 
 const gameOrderStore = useGameOrderStore()
+const championOrderStore = useChampionOrderStore()
 const { locale, t } = useI18n()
 
 type GameOrderStatusFilter = '1' | '2'
@@ -17,6 +20,7 @@ const recordKindTab = ref<RecordKindTab>('special')
 const escapeLoadingId = ref<string | null>(null)
 
 const gameOrderList = computed<BetHistoryData['list']>(() => gameOrderStore.gameOrderList ?? [])
+const championOrderList = computed<ChampionOrderRecord[]>(() => championOrderStore.championOrderList ?? [])
 
 const championPlayMarkers = computed(() => {
   const s = new Set<string>()
@@ -41,13 +45,14 @@ function isBettingOptionsModalRecord(bet: BetHistoryData['list'][number]) {
   return false
 }
 
-const filteredGameOrderList = computed(() => {
-  const src = gameOrderList.value
-  if (recordKindTab.value === 'special') return src.filter(isBettingOptionsModalRecord)
-  return src.filter((b) => !isBettingOptionsModalRecord(b))
-})
+const filteredGameOrderList = computed(() => gameOrderList.value.filter((b) => !isBettingOptionsModalRecord(b)))
 
-/** 年／月／日、時分，依目前語系地區格式 */
+const listEmpty = computed(() =>
+  recordKindTab.value === 'special'
+    ? championOrderList.value.length === 0
+    : filteredGameOrderList.value.length === 0,
+)
+
 function formatBetDateTime(ts: number) {
   const d = new Date(ts)
   return new Intl.DateTimeFormat(locale.value, {
@@ -128,13 +133,11 @@ const statusConfig = (status: BetRecord['status']) => {
   }
 }
 
-/** 與後端一致：yyyy-MM-dd HH:mm:ss（本地時區） */
 function toApiDateTime(d: Date) {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
-/** Wide window so server-side filters do not drop bets before “today” or last year */
 function gameOrderRangeLastTwoYears() {
   const end = new Date()
   end.setHours(23, 59, 59, 999)
@@ -142,6 +145,39 @@ function gameOrderRangeLastTwoYears() {
   start.setFullYear(start.getFullYear() - 2)
   start.setHours(0, 0, 0, 0)
   return { start_time: toApiDateTime(start), end_time: toApiDateTime(end) }
+}
+
+function championOrderStatusConfig(bet: ChampionOrderRecord) {
+  const st = String(bet.status ?? '').trim()
+  if (st === '1') return statusConfig('pending')
+  const r = String(bet.result ?? '').trim()
+  if (r === '2') return statusConfig('won')
+  if (r === '1') return statusConfig('lost')
+  if (r === '3') {
+    return {
+      icon: Equal,
+      class: 'text-[var(--color-muted)] bg-[var(--color-bg)]',
+      labelKey: 'live.status.draw',
+    }
+  }
+  return statusConfig('pending')
+}
+
+function betTotalOddsChampion(bet: ChampionOrderRecord) {
+  return parseAmount(bet.odds)
+}
+
+function potentialPayoutChampion(bet: ChampionOrderRecord) {
+  return parseAmount(bet.amount) * betTotalOddsChampion(bet)
+}
+
+function loadChampionOrders() {
+  const { start_time, end_time } = gameOrderRangeLastTwoYears()
+  return championOrderStore.fetchChampionOrderList({
+    status: orderStatusFilter.value === '1' ? '1' : '3',
+    startTime: start_time,
+    endTime: end_time,
+  })
 }
 
 function loadGameOrders() {
@@ -157,6 +193,7 @@ function setOrderStatusTab(s: GameOrderStatusFilter) {
   if (orderStatusFilter.value === s) return
   orderStatusFilter.value = s
   loadGameOrders()
+  void loadChampionOrders()
 }
 
 type InsuranceModalVariant = 'ok' | 'error'
@@ -195,11 +232,13 @@ async function handleBuyInsurance(bet: BetHistoryData['list'][number]) {
 
 onMounted(() => {
   loadGameOrders()
+  void loadChampionOrders()
 })
 </script>
 
 <template>
-  <div class="px-4 py-4">
+  <div class="bet-history-page">
+    <div class="px-4 py-4">
     <!-- Header -->
     <div class="flex items-center gap-3 mb-6">
       <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary-dark
@@ -299,107 +338,156 @@ onMounted(() => {
 
     <Transition name="page" mode="out-in">
       <div :key="`${orderStatusFilter}-${recordKindTab}`">
-        <!-- Bet List -->
-        <div v-if="filteredGameOrderList.length > 0" class="space-y-4">
-          <div
-            v-for="bet in filteredGameOrderList"
-            :key="bet.id"
-            class="rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] p-4"
-          >
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <p class="font-semibold text-[var(--color-text)] line-clamp-2">{{ bet.game_title }}</p>
-              <span
-                class="flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1"
-                :class="statusConfig(bet.status as any).class"
-              >
-                <component :is="statusConfig(bet.status as any).icon" class="w-3 h-3" />
-                {{ $t(statusConfig(bet.status as any).labelKey) }}
-              </span>
-            </div>
-            <div class="flex justify-between gap-3 text-sm text-[var(--color-muted)] mb-2">
-              <div class="flex flex-col min-w-0">
-                <span>{{ $t('betSlip.playTypeLabel') }}{{ bet.play_title }}</span>
+        <div v-if="!listEmpty" class="space-y-4">
+          <template v-if="recordKindTab === 'special'">
+            <div
+              v-for="bet in championOrderList"
+              :key="bet.id"
+              class="rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] p-4"
+            >
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <p class="font-semibold text-[var(--color-text)] line-clamp-2">{{ bet.champion_title }}</p>
+                <span
+                  class="flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1"
+                  :class="championOrderStatusConfig(bet).class"
+                >
+                  <component :is="championOrderStatusConfig(bet).icon" class="w-3 h-3" />
+                  {{ $t(championOrderStatusConfig(bet).labelKey) }}
+                </span>
+              </div>
+              <div class="flex flex-col gap-1 text-sm text-[var(--color-muted)] mb-2 min-w-0">
+                <span>{{ $t('betSlip.playTypeLabel') }}{{ $t('bettingOptionsModal.championBetType') }}</span>
                 <span>{{ $t('betSlip.betSelectionLabel') }}{{ bet.odds_title }}</span>
               </div>
-              <div v-if="showInsuranceBreakdown(bet)" class="flex-shrink-0 self-start">
-                <button
-                  type="button"
-                  class="px-3 py-1.5 rounded-lg text-xs font-semibold
-                         bg-primary/15 text-primary border border-primary/30
-                         transition-all active:scale-[0.98]
-                         disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
-                  :disabled="escapeLoadingId === bet.id"
-                  @click="handleBuyInsurance(bet)"
+              <div
+                v-if="String(bet.status).trim() === '3' && bet.result_title"
+                class="text-xs text-[var(--color-muted)] mb-2"
+              >
+                {{ $t('live.champion.resultLabel') }}{{ bet.result_title }}
+              </div>
+              <div class="flex items-center justify-between text-sm pt-2 border-t border-[var(--color-border)]">
+                <span class="text-[var(--color-muted)]">{{ $t('common.stake') }} {{ $t('common.currencySymbol') }}{{ bet.amount }}</span>
+                <span class="font-semibold">
+                  <span :class="bonusToneClass(bet.bonus)">{{ $t('common.currencySymbol') }}{{ bet.bonus }}</span>
+                  <span class="text-xs text-[var(--color-muted)] font-normal">@ {{ bet.odds }}</span>
+                </span>
+              </div>
+              <div class="space-y-2 pt-2 border-t border-[var(--color-border)]">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-[var(--color-muted)]">{{ $t('common.totalOdds') }}</span>
+                  <span class="font-semibold text-[var(--color-text)]">
+                    {{ betTotalOddsChampion(bet).toFixed(2) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-[var(--color-muted)]">{{ $t('common.potentialPayout') }}</span>
+                  <span class="text-xl font-bold text-success">
+                    {{ formatCurrency(potentialPayoutChampion(bet)) }}
+                  </span>
+                </div>
+              </div>
+              <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ betTimeLine(new Date(bet.bet_time).getTime()) }}</div>
+            </div>
+          </template>
+          <template v-else>
+            <div
+              v-for="bet in filteredGameOrderList"
+              :key="bet.id"
+              class="rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)] p-4"
+            >
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <p class="font-semibold text-[var(--color-text)] line-clamp-2">{{ bet.game_title }}</p>
+                <span
+                  class="flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1"
+                  :class="statusConfig(bet.status as any).class"
                 >
-                  <span
-                    v-if="escapeLoadingId === bet.id"
-                    class="inline-block w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin align-[-2px] mr-1"
-                  />
-                  {{ $t('betSlip.insurance.label') }}
-                </button>
-              </div>
-            </div>
-            <div class="flex items-center justify-between text-sm pt-2 border-t border-[var(--color-border)]">
-              <span class="text-[var(--color-muted)]">{{ $t('common.stake') }} {{ $t('common.currencySymbol') }}{{ bet.amount }}</span>
-              <span class="font-semibold">
-                <span :class="bonusToneClass(bet.bonus)">{{ $t('common.currencySymbol') }}{{ bet.bonus }}</span>
-                <span class="text-xs text-[var(--color-muted)] font-normal">@ {{ bet.odds }}</span>
-              </span>
-            </div>
-            <div class="space-y-2 pt-2 border-t border-[var(--color-border)]">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-[var(--color-muted)]">{{ $t('common.totalOdds') }}</span>
-                <span class="font-semibold text-[var(--color-text)]">
-                  {{ betTotalOdds(bet).toFixed(2) }}
+                  <component :is="statusConfig(bet.status as any).icon" class="w-3 h-3" />
+                  {{ $t(statusConfig(bet.status as any).labelKey) }}
                 </span>
               </div>
-              <template v-if="showInsuranceBreakdown(bet)">
-                <div class="flex items-start justify-between gap-2 text-sm">
-                  <div class="min-w-0">
-                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
-                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
-                      {{ $t('betSlip.insurance.feeSub', { rate: bet.escape_fee ?? '0' }) }}
-                    </p>
-                  </div>
-                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
-                    {{ formatCurrency(insuranceFeeAmount(bet)) }}
-                  </span>
+              <div class="flex justify-between gap-3 text-sm text-[var(--color-muted)] mb-2">
+                <div class="flex flex-col min-w-0">
+                  <span>{{ $t('betSlip.playTypeLabel') }}{{ bet.play_title }}</span>
+                  <span>{{ $t('betSlip.betSelectionLabel') }}{{ bet.odds_title }}</span>
                 </div>
-                <div class="flex items-start justify-between gap-2 text-sm">
-                  <div class="min-w-0">
-                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.winTrialLabel') }}</span>
-                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
-                      {{ $t('betSlip.insurance.winTrialSub', { rate: bet.escape_win ?? '0' }) }}
-                    </p>
-                  </div>
-                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
-                    {{ formatCurrency(insuranceWinProfitAmount(bet)) }}
-                  </span>
+                <div v-if="showInsuranceBreakdown(bet)" class="flex-shrink-0 self-start">
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold
+                           bg-primary/15 text-primary border border-primary/30
+                           transition-all active:scale-[0.98]
+                           disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
+                    :disabled="escapeLoadingId === bet.id"
+                    @click="handleBuyInsurance(bet)"
+                  >
+                    <span
+                      v-if="escapeLoadingId === bet.id"
+                      class="inline-block w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin align-[-2px] mr-1"
+                    />
+                    {{ $t('betSlip.insurance.label') }}
+                  </button>
                 </div>
-                <div class="flex items-start justify-between gap-2 text-sm">
-                  <div class="min-w-0">
-                    <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.loseTrialLabel') }}</span>
-                    <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
-                      {{ $t('betSlip.insurance.loseTrialSub', { rate: bet.escape_lose ?? '0' }) }}
-                    </p>
-                  </div>
-                  <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
-                    {{ formatCurrency(insuranceLoseRefundAmount(bet)) }}
-                  </span>
-                </div>
-              </template>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-[var(--color-muted)]">{{ $t('common.potentialPayout') }}</span>
-                <span class="text-xl font-bold text-success">
-                  {{ formatCurrency(potentialPayoutForBet(bet)) }}
+              </div>
+              <div class="flex items-center justify-between text-sm pt-2 border-t border-[var(--color-border)]">
+                <span class="text-[var(--color-muted)]">{{ $t('common.stake') }} {{ $t('common.currencySymbol') }}{{ bet.amount }}</span>
+                <span class="font-semibold">
+                  <span :class="bonusToneClass(bet.bonus)">{{ $t('common.currencySymbol') }}{{ bet.bonus }}</span>
+                  <span class="text-xs text-[var(--color-muted)] font-normal">@ {{ bet.odds }}</span>
                 </span>
               </div>
+              <div class="space-y-2 pt-2 border-t border-[var(--color-border)]">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-[var(--color-muted)]">{{ $t('common.totalOdds') }}</span>
+                  <span class="font-semibold text-[var(--color-text)]">
+                    {{ betTotalOdds(bet).toFixed(2) }}
+                  </span>
+                </div>
+                <template v-if="showInsuranceBreakdown(bet)">
+                  <div class="flex items-start justify-between gap-2 text-sm">
+                    <div class="min-w-0">
+                      <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.feeLabel') }}</span>
+                      <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                        {{ $t('betSlip.insurance.feeSub', { rate: bet.escape_fee ?? '0' }) }}
+                      </p>
+                    </div>
+                    <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                      {{ formatCurrency(insuranceFeeAmount(bet)) }}
+                    </span>
+                  </div>
+                  <div class="flex items-start justify-between gap-2 text-sm">
+                    <div class="min-w-0">
+                      <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.winTrialLabel') }}</span>
+                      <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                        {{ $t('betSlip.insurance.winTrialSub', { rate: bet.escape_win ?? '0' }) }}
+                      </p>
+                    </div>
+                    <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                      {{ formatCurrency(insuranceWinProfitAmount(bet)) }}
+                    </span>
+                  </div>
+                  <div class="flex items-start justify-between gap-2 text-sm">
+                    <div class="min-w-0">
+                      <span class="text-[var(--color-muted)]">{{ $t('betSlip.insurance.loseTrialLabel') }}</span>
+                      <p class="text-xs text-[var(--color-muted)]/80 mt-0.5">
+                        {{ $t('betSlip.insurance.loseTrialSub', { rate: bet.escape_lose ?? '0' }) }}
+                      </p>
+                    </div>
+                    <span class="font-semibold text-[var(--color-text)] shrink-0 tabular-nums">
+                      {{ formatCurrency(insuranceLoseRefundAmount(bet)) }}
+                    </span>
+                  </div>
+                </template>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-[var(--color-muted)]">{{ $t('common.potentialPayout') }}</span>
+                  <span class="text-xl font-bold text-success">
+                    {{ formatCurrency(potentialPayoutForBet(bet)) }}
+                  </span>
+                </div>
+              </div>
+              <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ betTimeLine(new Date(bet.bet_time).getTime()) }}</div>
             </div>
-            <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ betTimeLine(new Date(bet.bet_time).getTime()) }}</div>
-          </div>
+          </template>
         </div>
-
-        <!-- Empty State -->
         <div
           v-else
           class="flex flex-col items-center justify-center py-16 text-center"
@@ -461,6 +549,7 @@ onMounted(() => {
       </div>
     </Transition>
   </Teleport>
+  </div>
 </template>
 
 <style scoped>
