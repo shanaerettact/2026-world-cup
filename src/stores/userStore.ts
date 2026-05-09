@@ -45,7 +45,7 @@ export const useUserStore = defineStore('user', () => {
   const verify = ref(0)
   const session = ref('')
 
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = async (prefetchedPayload?: unknown) => {
     const applyUser = (payload: unknown) => {
       const user = pickUserRecord(payload)
       if (!user) return
@@ -88,7 +88,11 @@ export const useUserStore = defineStore('user', () => {
       session.value = strFromApi(user.session)
     }
     try {
-      applyUser(await getUserInfo())
+      applyUser(
+        prefetchedPayload !== undefined
+          ? prefetchedPayload
+          : await getUserInfo(),
+      )
     } catch (error) {
       const msg = error instanceof Error ? error.message : ''
       if (!msg.includes('其他地方登入')) {
@@ -96,8 +100,8 @@ export const useUserStore = defineStore('user', () => {
         return
       }
       try {
-        await bootstrapWorldcupAuth(loginUserForRelogin())
-        applyUser(await getUserInfo())
+        const payload = await bootstrapWorldcupAuth(loginUserForRelogin())
+        applyUser(payload)
       } catch (e) {
         console.error(e)
       }

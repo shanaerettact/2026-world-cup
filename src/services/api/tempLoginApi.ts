@@ -84,10 +84,10 @@ export async function bootstrapTempTestLogin(user: string = TEMP_LOGIN_USER) {
 
   const body = new FormData()
   body.set('MemID', memId)
-  await request.post(
+  const indexRes = await request.post(
     `/user/index?MemID=${encodeURIComponent(memId)}`,
     body,
   )
   cancelDeferredSessionExpiredNavigation()
-  return { redirectUrl, memId }
+  return { redirectUrl, memId, indexPayload: indexRes.data as unknown }
 }

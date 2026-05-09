@@ -98,13 +98,14 @@ instance.interceptors.response.use(
   }
 )
 
-export async function bootstrapWorldcupAuth(user: string): Promise<void> {
+export async function bootstrapWorldcupAuth(user: string): Promise<unknown> {
   const formData = new FormData()
   if (user) {
     formData.append('user', user)
   }
-  await instance.post('/user/index', formData)
+  const res = await instance.post('/user/index', formData)
   cancelDeferredSessionExpiredNavigation()
+  return res.data
 }
 
 export default instance;

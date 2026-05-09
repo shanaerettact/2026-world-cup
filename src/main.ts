@@ -25,9 +25,9 @@ window.addEventListener('worldcup:session-expired', () => {
 ;(async () => {
   await router.isReady()
   try {
-    // await bootstrapTempTestLogin(loginUser)
-    await bootstrapWorldcupAuth(loginUser)
-    await useUserStore(pinia).fetchUserInfo()
+    // const { indexPayload } = await bootstrapTempTestLogin(loginUser)
+    const indexPayload = await bootstrapWorldcupAuth(loginUser)
+    await useUserStore(pinia).fetchUserInfo(indexPayload)
   } catch (e) {
     console.error(e)
     app.mount('#app')
