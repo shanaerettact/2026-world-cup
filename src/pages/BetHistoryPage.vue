@@ -16,7 +16,7 @@ const { locale, t } = useI18n()
 type GameOrderStatusFilter = '1' | '2'
 type RecordKindTab = 'special' | 'other'
 const orderStatusFilter = ref<GameOrderStatusFilter>('1')
-const recordKindTab = ref<RecordKindTab>('special')
+const recordKindTab = ref<RecordKindTab>('other')
 const escapeLoadingId = ref<string | null>(null)
 
 const gameOrderList = computed<BetHistoryData['list']>(() => gameOrderStore.gameOrderList ?? [])
@@ -300,7 +300,7 @@ onMounted(() => {
           :aria-label="$t('live.recordKindAria')"
         >
           <button
-            v-for="kind in [{ key: 'special', label: 'specialMarkets' }, { key: 'other', label: 'otherBets' }] as const"
+            v-for="kind in [{ key: 'other', label: 'otherBets' }, { key: 'special', label: 'specialMarkets' }] as const"
             :key="kind.key"
             type="button"
             role="tab"
@@ -316,12 +316,7 @@ onMounted(() => {
           >
             <span
               v-if="recordKindTab === kind.key"
-              class="absolute inset-0 rounded-xl"
-              :class="
-                kind.key === 'special'
-                  ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 shadow-lg shadow-amber-500/25'
-                  : 'bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 shadow-lg shadow-slate-600/25'
-              "
+              class="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 shadow-lg shadow-amber-500/25"
             />
             <span
               v-if="recordKindTab === kind.key"
