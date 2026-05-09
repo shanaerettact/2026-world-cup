@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Home, Zap, Wallet, MessageCircle, LayoutGrid } from 'lucide-vue-next'
+import { Home, Zap, Wallet, MessageCircle, Star } from 'lucide-vue-next'
 import { useChatStore } from '@/stores/chatStore'
 import { useBetSlipStore } from '@/stores/betSlipStore'
 import { useBettingModalStore } from '@/stores/bettingModalStore'
@@ -111,24 +111,29 @@ watch(isVerifyModalOpen, (open) => {
             :class="isActive(item.path) ? 'bg-primary/10' : ''"
           />
           <component :is="item.icon" class="w-6 h-6 relative z-10" />
-          <span class="text-[10px] font-medium mt-1 relative z-10">{{ $t(item.labelKey) }}</span>
+          <span class="text-xs font-medium mt-1 relative z-10">{{ $t(item.labelKey) }}</span>
           <div
             v-if="isActive(item.path)"
             class="absolute -bottom-2 w-8 h-1 rounded-full bg-primary"
           />
         </router-link>
 
-        <div class="relative flex flex-col items-center justify-center w-16">
+        <div class="relative flex h-14 w-16 flex-col items-center justify-end pb-0.5">
           <button
+            type="button"
             @click="openBettingMarkets"
-            class="markets-fab-nav absolute -top-8 w-14 h-14 rounded-full
+            class="markets-fab-nav absolute -top-8 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full
                    flex flex-col items-center justify-center gap-0.5
                    transition-all duration-200 active:scale-90 select-none"
             :aria-label="$t('bottomNav.openBettingMarketsAria')"
           >
-            <LayoutGrid class="w-5 h-5 text-white" />
+            <Star class="w-6 h-6 text-white" />
           </button>
-          <span class="text-[10px] font-semibold text-primary mt-auto pt-1">{{ $t('bottomNav.specialMarkets') }}</span>
+          <span
+            class="relative z-10 mt-1 max-w-[4.25rem] text-center text-xs font-semibold leading-tight text-amber-400"
+          >
+            {{ $t('bottomNav.specialMarkets') }}
+          </span>
         </div>
 
         <router-link
@@ -144,7 +149,7 @@ watch(isVerifyModalOpen, (open) => {
             :class="isActive(navItems[2].path) ? 'bg-primary/10' : ''"
           />
           <component :is="navItems[2].icon" class="w-6 h-6 relative z-10" />
-          <span class="text-[10px] font-medium mt-1 relative z-10">{{ $t(navItems[2].labelKey) }}</span>
+          <span class="text-xs font-medium mt-1 relative z-10">{{ $t(navItems[2].labelKey) }}</span>
           <div
             v-if="isActive(navItems[2].path)"
             class="absolute -bottom-2 w-8 h-1 rounded-full bg-primary"
@@ -159,7 +164,7 @@ watch(isVerifyModalOpen, (open) => {
           :disabled="isCheckingVerify"
         >
           <MessageCircle class="w-6 h-6" />
-          <span class="text-[10px] font-medium mt-1">{{ $t('nav.chat') }}</span>
+          <span class="text-xs font-medium mt-1">{{ $t('nav.chat') }}</span>
           <span
             v-if="isCheckingVerify"
             class="absolute top-1 right-2 w-3.5 h-3.5 border border-[var(--color-text)]/30 border-t-[var(--color-text)] rounded-full animate-spin"
