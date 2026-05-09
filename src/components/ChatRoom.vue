@@ -34,7 +34,7 @@ const handleWarningAcknowledge = () => {
   disconnect()
   if (goSessionExpired) {
     chatStore.closeChat()
-    void router.replace({ name: 'session-expired' })
+    void router.replace({ name: 'login-failed' })
     return
   }
   connect()

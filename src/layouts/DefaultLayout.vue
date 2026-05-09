@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import BottomNav from '@/components/BottomNav.vue'
 import BetslipDrawer from '@/components/BetslipDrawer.vue'
@@ -7,9 +6,6 @@ import ConfirmBetModal from '@/components/ConfirmBetModal.vue'
 import ChatRoom from '@/components/ChatRoom.vue'
 import MatchDetailPanel from '@/components/MatchDetailPanel.vue'
 import BettingOptionsModal from '@/components/BettingOptionsModal.vue'
-
-// Initialize theme
-useTheme()
 </script>
 
 <template>
