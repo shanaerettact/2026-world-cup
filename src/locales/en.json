@@ -159,7 +159,8 @@
     "title": "Live Chat",
     "placeholder": "Type a message...",
     "you": "You",
-    "close": "Close Chat"
+    "close": "Close Chat",
+    "emojiToggleAria": "Open or close emoji picker"
   },
   "theme": {
     "toggleAriaLabel": "Toggle theme"

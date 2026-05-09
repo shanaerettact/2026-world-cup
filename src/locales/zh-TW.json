@@ -159,7 +159,8 @@
     "title": "即時聊天",
     "placeholder": "輸入訊息…",
     "you": "你",
-    "close": "關閉聊天"
+    "close": "關閉聊天",
+    "emojiToggleAria": "開啟或關閉表情貼圖"
   },
   "theme": {
     "toggleAriaLabel": "切換主題"

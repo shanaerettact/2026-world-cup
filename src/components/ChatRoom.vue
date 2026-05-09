@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { X, Send, Users, AlertTriangle } from 'lucide-vue-next'
+import { X, Send, Users, AlertTriangle, Smile } from 'lucide-vue-next'
 import { useChatStore } from '@/stores/chatStore'
 import { useChatSocket } from '@/composables/useChatSocket'
 
@@ -17,12 +17,89 @@ const {
   disconnect,
 } = useChatSocket()
 
+/** 常用表情與球賽相關符號（Unicode），點選插入輸入框 */
+const CHAT_EMOJI_PALETTE = [
+  '😀',
+  '😃',
+  '😄',
+  '😁',
+  '😅',
+  '😂',
+  '🤣',
+  '😊',
+  '😍',
+  '🥰',
+  '😘',
+  '😎',
+  '🤩',
+  '🥳',
+  '😮',
+  '😢',
+  '😭',
+  '😤',
+  '🙏',
+  '👍',
+  '👎',
+  '👏',
+  '🙌',
+  '💪',
+  '🤝',
+  '👋',
+  '✌️',
+  '❤️',
+  '🔥',
+  '⭐',
+  '✨',
+  '💯',
+  '⚽',
+  '🏆',
+  '🥅',
+  '🏟️',
+  '⚡',
+  '🎯',
+  '🎉',
+  '🎊',
+  '🏅',
+  '🍀',
+  '💬',
+]
+
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
+const messageInputRef = ref<HTMLInputElement | null>(null)
+const emojiPickerOpen = ref(false)
+const emojiAreaRef = ref<HTMLElement | null>(null)
+
+function insertEmoji(emoji: string) {
+  const el = messageInputRef.value
+  const cur = messageInput.value
+  if (el) {
+    const start = el.selectionStart ?? cur.length
+    const end = el.selectionEnd ?? cur.length
+    messageInput.value = cur.slice(0, start) + emoji + cur.slice(end)
+    nextTick(() => {
+      el.focus()
+      const pos = start + emoji.length
+      el.setSelectionRange(pos, pos)
+    })
+  } else {
+    messageInput.value += emoji
+  }
+}
+
+function toggleEmojiPicker() {
+  emojiPickerOpen.value = !emojiPickerOpen.value
+}
+
+function closeEmojiPickerOnOutside(e: MouseEvent) {
+  const root = emojiAreaRef.value
+  if (!root?.contains(e.target as Node)) emojiPickerOpen.value = false
+}
 
 const sendMessage = () => {
   const text = messageInput.value.trim()
   if (!text) return
+  emojiPickerOpen.value = false
   chatStore.sendMessage(text)
   sendChatMessage(text)
   messageInput.value = ''
@@ -55,12 +132,26 @@ watch(() => chatStore.messages.length, () => {
 watch(() => chatStore.isChatOpen, (open) => {
   if (open) {
     scrollToBottom()
+  } else {
+    emojiPickerOpen.value = false
   }
   document.body.style.overflow = open ? 'hidden' : ''
 })
 
+watch(emojiPickerOpen, (open) => {
+  if (open) {
+    nextTick(() => document.addEventListener('mousedown', closeEmojiPickerOnOutside))
+  } else {
+    document.removeEventListener('mousedown', closeEmojiPickerOnOutside)
+  }
+})
+
 onMounted(() => {
   scrollToBottom()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('mousedown', closeEmojiPickerOnOutside)
 })
 </script>
 
@@ -196,28 +287,71 @@ onMounted(() => {
 
           <!-- Input -->
           <div class="p-4 border-t border-[var(--color-border)]">
-            <form @submit.prevent="sendMessage" class="flex gap-2">
-              <input
-                v-model="messageInput"
-                type="text"
-                :placeholder="$t('chat.placeholder')"
-                class="flex-1 py-3 px-4 rounded-xl bg-[var(--color-bg)]
-                       border border-[var(--color-border)]
-                       text-[var(--color-text)] placeholder-[var(--color-muted)]
-                       focus:outline-none focus:border-primary transition-colors"
-              />
-              <button
-                type="submit"
-                :disabled="!messageInput.trim()"
-                class="w-12 h-12 rounded-xl flex items-center justify-center
-                       bg-gradient-to-r from-primary to-primary-light
-                       text-white shadow-lg shadow-primary/20
-                       transition-all active:scale-90
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send class="w-5 h-5" />
-              </button>
-            </form>
+            <div ref="emojiAreaRef" class="relative">
+              <Transition name="fade">
+                <div
+                  v-if="emojiPickerOpen"
+                  class="absolute bottom-full mb-2 left-0 right-0 z-20 max-h-44 overflow-y-auto overscroll-contain
+                         rounded-xl border border-[var(--color-border)] bg-[var(--color-card)]
+                         shadow-lg shadow-black/15 p-2"
+                  role="listbox"
+                  :aria-label="$t('chat.emojiToggleAria')"
+                  @mousedown.prevent
+                >
+                  <div class="grid grid-cols-8 gap-0.5">
+                    <button
+                      v-for="em in CHAT_EMOJI_PALETTE"
+                      :key="em"
+                      type="button"
+                      class="flex items-center justify-center rounded-lg text-xl leading-none py-2 min-h-10
+                             hover:bg-[var(--color-bg)] active:scale-90 transition-transform"
+                      @click="insertEmoji(em)"
+                    >
+                      {{ em }}
+                    </button>
+                  </div>
+                </div>
+              </Transition>
+
+              <form @submit.prevent="sendMessage" class="flex gap-2 items-stretch">
+                <button
+                  type="button"
+                  class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center
+                         border border-[var(--color-border)] bg-[var(--color-bg)]
+                         text-[var(--color-muted)] hover:text-primary hover:border-primary/40
+                         transition-colors"
+                  :class="emojiPickerOpen ? 'border-primary text-primary' : ''"
+                  :aria-label="$t('chat.emojiToggleAria')"
+                  :aria-expanded="emojiPickerOpen"
+                  @click="toggleEmojiPicker"
+                >
+                  <Smile class="w-6 h-6" />
+                </button>
+                <input
+                  ref="messageInputRef"
+                  v-model="messageInput"
+                  type="text"
+                  autocomplete="off"
+                  :placeholder="$t('chat.placeholder')"
+                  class="flex-1 min-w-0 py-3 px-4 rounded-xl bg-[var(--color-bg)]
+                         border border-[var(--color-border)]
+                         text-[var(--color-text)] placeholder-[var(--color-muted)]
+                         focus:outline-none focus:border-primary transition-colors"
+                  @focus="emojiPickerOpen = false"
+                />
+                <button
+                  type="submit"
+                  :disabled="!messageInput.trim()"
+                  class="w-12 h-12 shrink-0 rounded-xl flex items-center justify-center
+                         bg-gradient-to-r from-primary to-primary-light
+                         text-white shadow-lg shadow-primary/20
+                         transition-all active:scale-90
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send class="w-5 h-5" />
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
