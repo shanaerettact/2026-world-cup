@@ -13,9 +13,19 @@ const { locale, t } = useI18n()
 const homeStore = useHomeStore()
 const selectedDate = ref<string>('')
 
+function matchKickoffMs(m: Match): number {
+  const ms = Date.parse(m.kickoff.trim().replace(' ', 'T'))
+  return Number.isNaN(ms) ? 0 : ms
+}
+
+/** 全部賽事，開賽時間新的在前（不做「尚未開賽」過濾） */
+const sortedAllMatches = computed(() =>
+  [...matchStore.matches].sort((a, b) => matchKickoffMs(b) - matchKickoffMs(a)),
+)
+
 const upcomingDates = computed(() => {
   const set = new Set<string>()
-  matchStore.upcomingMatches.forEach(m => {
+  matchStore.matches.forEach(m => {
     const dateStr = m.kickoff.slice(0, 10)
     set.add(dateStr)
   })
@@ -23,8 +33,8 @@ const upcomingDates = computed(() => {
 })
 
 const filteredUpcomingMatches = computed(() => {
-  if (!selectedDate.value) return matchStore.upcomingMatches
-  return matchStore.upcomingMatches.filter(m => m.kickoff.slice(0, 10) === selectedDate.value)
+  if (!selectedDate.value) return sortedAllMatches.value
+  return sortedAllMatches.value.filter(m => m.kickoff.slice(0, 10) === selectedDate.value)
 })
 
 function matchToGroup(m: Match): Group {
@@ -85,15 +95,15 @@ function parseApiDateTime(s: string | undefined): number | null {
   return Number.isNaN(ms) ? null : ms
 }
 
-/** 已結束（end_time < 現在）的賽事不顯示；無法解析或為空則仍顯示 */
+/** 首頁直播區：僅使用 group[0] 世足賽賽事，依開賽時間新到舊 */
 const liveFeaturedGames = computed(() => {
   const games = homeStore.homeData?.group?.[0]?.game
   if (!games?.length) return []
-  const now = Date.now()
-  return games.filter((g) => {
-    const end = parseApiDateTime(g.end_time)
-    if (end == null) return true
-    return end >= now
+  return [...games].sort((a, b) => {
+    const sa = parseApiDateTime(a.start_time)
+    const sb = parseApiDateTime(b.start_time)
+    if (sa != null && sb != null) return sb - sa
+    return 0
   })
 })
 
