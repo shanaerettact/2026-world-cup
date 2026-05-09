@@ -69,7 +69,7 @@
       },
       "validation": {
         "idRequired": "Please enter your ID",
-        "avatarRequired": "Please upload a profile photo (converted to zip automatically)",
+        "avatarRequired": "Please upload a profile photo",
         "avatarZipping": "Please wait for the image conversion to finish"
       },
       "error": {

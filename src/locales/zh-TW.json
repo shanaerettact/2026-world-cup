@@ -69,7 +69,7 @@
       },
       "validation": {
         "idRequired": "請輸入 ID",
-        "avatarRequired": "請上傳大頭照（將自動轉為 zip）",
+        "avatarRequired": "請上傳大頭照",
         "avatarZipping": "請等待圖片轉檔完成"
       },
       "error": {
