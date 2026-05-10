@@ -134,7 +134,7 @@ onMounted(() => {
       </div>
 
       <!-- Deposit Button -->
-      <button
+      <!-- <button
         @click="showDepositModal = true"
         :disabled="userStore.isDepositing"
         class="w-full py-3.5 rounded-xl font-bold text-white
@@ -146,9 +146,9 @@ onMounted(() => {
         <span v-if="userStore.isDepositing" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         <Plus v-else class="w-5 h-5" />
         <span>{{ userStore.isDepositing ? $t('common.processing') : $t('account.deposit.cta') }}</span>
-      </button>
+      </button> -->
 
-      <div
+      <!-- <div
         v-if="phone?.trim() || email?.trim()"
         class="mt-4 pt-4 border-t border-[var(--color-border)] space-y-2 text-sm"
       >
@@ -160,7 +160,7 @@ onMounted(() => {
           <span class="font-medium text-[var(--color-text)]">{{ $t('account.profile.contactEmail') }}</span>
           {{ email.trim() }}
         </p>
-      </div>
+      </div> -->
     </div>
 
     <div
@@ -172,7 +172,7 @@ onMounted(() => {
     </div>
 
     <!-- Menu -->
-    <div class="bg-[var(--color-card)] rounded-2xl overflow-hidden
+    <!-- <div class="bg-[var(--color-card)] rounded-2xl overflow-hidden
                 border border-[var(--color-border)]">
       <button
         v-for="(item, index) in menuItems"
@@ -197,17 +197,17 @@ onMounted(() => {
           <ChevronRight class="w-5 h-5 text-[var(--color-muted)]" />
         </div>
       </button>
-    </div>
+    </div> -->
 
     <!-- Logout -->
-    <button
+    <!-- <button
       class="w-full mt-4 flex items-center justify-center gap-2 p-4
              rounded-2xl bg-danger/10 text-danger font-medium
              transition-all active:scale-[0.98]"
     >
       <LogOut class="w-5 h-5" />
       <span>{{ $t('account.signOut') }}</span>
-    </button>
+    </button> -->
   </div>
 
   <!-- Deposit Modal -->
