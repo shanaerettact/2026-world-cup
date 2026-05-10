@@ -1,5 +1,11 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
+let authBootstrapFailed = false
+
+export function setAuthBootstrapFailed(value: boolean) {
+  authBootstrapFailed = value
+}
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -25,6 +31,12 @@ const router = createRouter({
       component: () => import('@/pages/AccountPage.vue')
     }
   ]
+})
+
+router.beforeEach((to) => {
+  if (authBootstrapFailed && to.name !== 'login-failed') {
+    return { name: 'login-failed', replace: true }
+  }
 })
 
 export default router
