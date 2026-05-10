@@ -64,10 +64,6 @@ function formatBetDateTime(ts: number) {
   }).format(d)
 }
 
-function betTimeLine(ts: number) {
-  return t('live.betTime', { time: formatBetDateTime(ts) })
-}
-
 function bonusToneClass(bonus: string) {
   const n = Number(String(bonus).replace(/,/g, ''))
   if (Number.isNaN(n) || n === 0) return 'text-[var(--color-text)]'
@@ -113,7 +109,8 @@ function insuranceLoseRefundAmount(bet: BetHistoryData['list'][number]) {
 }
 
 function potentialPayoutForBet(bet: BetHistoryData['list'][number]) {
-  return parseAmount(bet.amount) * betTotalOdds(bet)
+  const stake = parseAmount(bet.amount)
+  return stake * betTotalOdds(bet) + stake
 }
 
 const formatCurrency = (value: number) => {
@@ -168,7 +165,8 @@ function betTotalOddsChampion(bet: ChampionOrderRecord) {
 }
 
 function potentialPayoutChampion(bet: ChampionOrderRecord) {
-  return parseAmount(bet.amount) * betTotalOddsChampion(bet)
+  const stake = parseAmount(bet.amount)
+  return stake * betTotalOddsChampion(bet) + stake
 }
 
 function loadChampionOrders() {
@@ -479,7 +477,7 @@ onMounted(() => {
                   </span>
                 </div>
               </div>
-              <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ betTimeLine(new Date(bet.bet_time).getTime()) }}</div>
+              <div class="text-[10px] text-[var(--color-muted)] mt-2">{{ bet.bet_time }}</div>
             </div>
           </template>
         </div>

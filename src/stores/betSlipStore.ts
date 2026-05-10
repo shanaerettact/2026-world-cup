@@ -39,9 +39,9 @@ export interface BetRecord {
 }
 
 const MOCK_BET_HISTORY: BetRecord[] = [
-  { id: '1', matchTitle: 'Brazil vs Argentina', betType: 'Full Time Result', selection: 'Brazil', odds: 2.15, stake: 100, potentialPayout: 215, status: 'won', timestamp: Date.now() - 86400000 * 2 },
-  { id: '2', matchTitle: 'Germany vs France', betType: 'Over/Under', selection: 'Over 2.5', odds: 1.85, stake: 50, potentialPayout: 92.5, status: 'lost', timestamp: Date.now() - 86400000 },
-  { id: '3', matchTitle: 'Spain vs Italy', betType: 'Handicap', selection: 'Spain -0.5', odds: 1.92, stake: 80, potentialPayout: 153.6, status: 'pending', timestamp: Date.now() - 3600000 },
+  { id: '1', matchTitle: 'Brazil vs Argentina', betType: 'Full Time Result', selection: 'Brazil', odds: 2.15, stake: 100, potentialPayout: 315, status: 'won', timestamp: Date.now() - 86400000 * 2 },
+  { id: '2', matchTitle: 'Germany vs France', betType: 'Over/Under', selection: 'Over 2.5', odds: 1.85, stake: 50, potentialPayout: 142.5, status: 'lost', timestamp: Date.now() - 86400000 },
+  { id: '3', matchTitle: 'Spain vs Italy', betType: 'Handicap', selection: 'Spain -0.5', odds: 1.92, stake: 80, potentialPayout: 233.6, status: 'pending', timestamp: Date.now() - 3600000 },
 ]
 
 export const useBetSlipStore = defineStore('betSlip', () => {
@@ -69,8 +69,11 @@ export const useBetSlipStore = defineStore('betSlip', () => {
     return selections.value[0]?.odds || 0
   })
 
+  /** 可能派彩：下注金額 × 賠率 + 本金（本金即下注金額） */
   const potentialPayout = computed(() => {
-    return stake.value * totalOdds.value
+    const s = stake.value
+    const o = totalOdds.value
+    return s * o + s
   })
 
   const riskLevel = computed((): RiskLevel => {

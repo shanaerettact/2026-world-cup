@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Share2, Zap, Gift, MessageCircle } from 'lucide-vue-next'
+import { ArrowLeft, Zap, MessageCircle } from 'lucide-vue-next'
 import { useMatchStore } from '@/stores/matchStore'
 import { useHomeStore, homeGameToMatch } from '@/stores/homeStore'
 import { useBetSlipStore } from '@/stores/betSlipStore'
@@ -305,22 +305,21 @@ onMounted(() => {
                bg-[var(--color-bg)] flex flex-col overflow-hidden"
       >
         <!-- Header -->
-        <header class="flex items-center justify-between px-4 py-3 
+        <header class="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-4 py-3
                        bg-[var(--color-card)] border-b border-[var(--color-border)]">
           <button
             @click="closePanel"
-            class="w-10 h-10 rounded-xl flex items-center justify-center
+            class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center
                    hover:bg-[var(--color-bg)] transition-colors active:scale-90"
           >
             <ArrowLeft class="w-5 h-5 text-[var(--color-text)]" />
           </button>
-          <h1 class="font-semibold text-[var(--color-text)]">{{ matchTitle }}</h1>
-          <button
-            class="w-10 h-10 rounded-xl flex items-center justify-center
-                   hover:bg-[var(--color-bg)] transition-colors active:scale-90"
+          <h1
+            class="min-w-0 text-center font-semibold text-[var(--color-text)] truncate px-1"
           >
-            <Share2 class="w-5 h-5 text-[var(--color-text)]" />
-          </button>
+            {{ matchTitle }}
+          </h1>
+          <div class="w-10 shrink-0" aria-hidden="true" />
         </header>
 
         <!-- Scrollable Content -->
@@ -341,7 +340,7 @@ onMounted(() => {
           </div>
 
           <!-- Promo Banner -->
-          <div class="mx-4 mt-4 p-4 rounded-2xl bg-gradient-to-r from-primary to-primary-light
+          <!-- <div class="mx-4 mt-4 p-4 rounded-2xl bg-gradient-to-r from-primary to-primary-light
                       flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
@@ -356,7 +355,7 @@ onMounted(() => {
                           transition-all active:scale-95">
               {{ $t('common.claim') }}
             </button>
-          </div>
+          </div> -->
 
           <!-- Match Info -->
           <div class="mx-4 mt-4 p-4 rounded-2xl bg-[var(--color-card)] border border-[var(--color-border)]">
