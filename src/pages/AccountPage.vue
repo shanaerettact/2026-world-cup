@@ -1,21 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { 
-  Wallet, 
-  CreditCard,
-  History,
-  Settings,
-  HelpCircle,
-  LogOut,
-  ChevronRight,
-  Plus
-} from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/userStore'
 
 const userStore = useUserStore()
-const { username, formattedBalance, userAccount, userId, memberLevel, memberSinceRaw, phone, email } =
+const { username, formattedBalance, userAccount, userId, memberLevel, memberSinceRaw } =
   storeToRefs(userStore)
 const { t, locale } = useI18n()
 const depositAmount = ref(100)
@@ -59,17 +49,6 @@ const formattedMemberSince = computed(() => {
   return new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' }).format(ms)
 })
 
-const menuItems = computed(() => [
-  {
-    key: 'betHistory',
-    icon: History,
-    label: t('account.menu.betHistory'),
-    badge: userStore.betHistoryMenuBadge || '',
-  },
-  { key: 'paymentMethods', icon: CreditCard, label: t('account.menu.paymentMethods'), badge: '' },
-  { key: 'settings', icon: Settings, label: t('account.menu.settings'), badge: '' },
-  { key: 'helpSupport', icon: HelpCircle, label: t('account.menu.helpSupport'), badge: '' },
-])
 
 
 const handleDeposit = () => {
