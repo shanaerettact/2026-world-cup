@@ -3,8 +3,8 @@ import { createPinia } from 'pinia'
 import router, { setAuthBootstrapFailed } from './router'
 import App from './App.vue'
 import { i18n } from './i18n'
-// import { bootstrapTempTestLogin } from './services/api/tempLoginApi'
-import {bootstrapWorldcupAuth} from './utils/request'
+import { bootstrapTempTestLogin } from './services/api/tempLoginApi'
+// import {bootstrapWorldcupAuth} from './utils/request'
 import { useUserStore } from './stores/userStore'
 import './styles/main.css'
 import 'remixicon/fonts/remixicon.css'
@@ -33,8 +33,8 @@ window.addEventListener('worldcup:session-expired', () => {
 ;(async () => {
   await router.isReady()
   try {
-    // const { indexPayload } = await bootstrapTempTestLogin(loginUser)
-    const indexPayload = await bootstrapWorldcupAuth(loginUser)
+    const { indexPayload } = await bootstrapTempTestLogin(loginUser)
+    // const indexPayload = await bootstrapWorldcupAuth(loginUser)
     const userStore = useUserStore(pinia)
     await userStore.fetchUserInfo(indexPayload)
     if (!userProfileLooksLoaded(userStore)) {

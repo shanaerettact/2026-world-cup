@@ -53,16 +53,6 @@ const listEmpty = computed(() =>
     : filteredGameOrderList.value.length === 0,
 )
 
-function formatBetDateTime(ts: number) {
-  const d = new Date(ts)
-  return new Intl.DateTimeFormat(locale.value, {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d)
-}
 
 function bonusToneClass(bonus: string) {
   const n = Number(String(bonus).replace(/,/g, ''))

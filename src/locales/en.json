@@ -63,18 +63,21 @@
         "idPlaceholder": "Enter ID",
         "avatarLabel": "Profile Photo",
         "avatarUpload": "Upload image file",
-        "zipping": "Converting...",
-        "autoZipHint": "Automatically convert to zip after upload",
-        "zippedDone": "Converted: {file}"
+        "compressing": "Compressing...",
+        "compressHint": "Images are resized and compressed after upload (JPG and PNG only)",
+        "compressedDone": "Compressed: {file}"
       },
       "validation": {
         "idRequired": "Please enter your ID",
         "avatarRequired": "Please upload a profile photo",
-        "avatarZipping": "Please wait for the image conversion to finish"
+        "avatarCompressing": "Please wait for image compression to finish"
       },
       "error": {
         "uploadImageOnly": "Please upload an image file",
-        "zipFailed": "Failed to convert image, please upload again",
+        "invalidJpgPng": "Only JPG and PNG formats are supported.\nYour selected MIME type is: {mime}",
+        "unknownMime": "(unrecognized)",
+        "imageTooLarge": "File size cannot exceed {maxMb} MB",
+        "compressFailed": "Image compression failed",
         "submitFailed": "Failed to submit verification, please try again later",
         "statusInvalid": "Invalid verification status, please try again later",
         "statusFetchFailed": "Failed to fetch verification status, please try again later"

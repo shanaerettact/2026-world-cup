@@ -1,10 +1,103 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, Upload } from 'lucide-vue-next'
-import JSZip from 'jszip'
 import { useVerifyStore } from '@/stores/verifyStore'
 import { useUserStore } from '@/stores/userStore'
+
+const ALLOW_IMAGE_TYPES = ['image/jpeg', 'image/png'] as const
+const MAX_ORIGINAL_MB = 3
+const COMPRESS_MAX_EDGE = 1920
+const JPEG_QUALITY = 0.82
+
+async function loadImageSource(file: File): Promise<CanvasImageSource> {
+  if (typeof createImageBitmap !== 'undefined') {
+    try {
+      return await createImageBitmap(file)
+    } catch {
+      // fall through
+    }
+  }
+  return await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(img)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Image load failed'))
+    }
+    img.src = url
+  })
+}
+
+function releaseBitmap(source: CanvasImageSource) {
+  if (source instanceof ImageBitmap && typeof source.close === 'function') {
+    source.close()
+  }
+}
+
+async function compressImage(file: File): Promise<File> {
+  let bitmap: CanvasImageSource
+  try {
+    bitmap = await loadImageSource(file)
+  } catch {
+    throw new Error('IMAGE_COMPRESS_FAILED')
+  }
+  try {
+    const { width, height } = bitmap as { width: number; height: number }
+    let w = width
+    let h = height
+    const maxEdge = COMPRESS_MAX_EDGE
+    if (w > maxEdge || h > maxEdge) {
+      if (w >= h) {
+        h = Math.round((h * maxEdge) / w)
+        w = maxEdge
+      } else {
+        w = Math.round((w * maxEdge) / h)
+        h = maxEdge
+      }
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('IMAGE_COMPRESS_FAILED')
+
+    try {
+      ctx.drawImage(bitmap, 0, 0, w, h)
+    } catch {
+      throw new Error('IMAGE_COMPRESS_FAILED')
+    }
+
+    const mime: 'image/jpeg' | 'image/png' =
+      file.type === 'image/png' ? 'image/png' : 'image/jpeg'
+    const quality = mime === 'image/jpeg' ? JPEG_QUALITY : undefined
+    const ext = mime === 'image/png' ? 'png' : 'jpg'
+    const baseName = file.name.replace(/\.[^/.]+$/, '') || 'avatar'
+
+    return await new Promise<File>((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('IMAGE_COMPRESS_FAILED'))
+            return
+          }
+          resolve(new File([blob], `${baseName}.${ext}`, { type: mime }))
+        },
+        mime,
+        quality,
+      )
+    })
+  } catch {
+    throw new Error('IMAGE_COMPRESS_FAILED')
+  } finally {
+    releaseBitmap(bitmap)
+  }
+}
 
 const props = defineProps<{
   open: boolean
@@ -23,14 +116,14 @@ const userStore = useUserStore()
 
 const verifyFormId = ref('')
 const originalAvatarName = ref('')
-const zippedAvatarName = ref('')
-const zippedAvatarFile = ref<File | null>(null)
-const zipInfo = ref('')
+const compressedAvatarName = ref('')
+const compressedAvatarFile = ref<File | null>(null)
+const compressionInfo = ref('')
 const avatarError = ref('')
 const idFieldError = ref('')
 const avatarFieldError = ref('')
 const submitError = ref('')
-const isZippingAvatar = ref(false)
+const isCompressingAvatar = ref(false)
 
 const UNITS = ['B', 'KB', 'MB', 'GB'] as const
 
@@ -44,14 +137,14 @@ function formatBytes(bytes: number): string {
 function resetForm() {
   verifyFormId.value = ''
   originalAvatarName.value = ''
-  zippedAvatarName.value = ''
-  zippedAvatarFile.value = null
-  zipInfo.value = ''
+  compressedAvatarName.value = ''
+  compressedAvatarFile.value = null
+  compressionInfo.value = ''
   avatarError.value = ''
   idFieldError.value = ''
   avatarFieldError.value = ''
   submitError.value = ''
-  isZippingAvatar.value = false
+  isCompressingAvatar.value = false
 }
 
 watch(() => props.open, (open) => {
@@ -69,38 +162,43 @@ async function handleAvatarFileChange(event: Event) {
   const file = input.files?.[0]
   avatarError.value = ''
   avatarFieldError.value = ''
-  zipInfo.value = ''
-  zippedAvatarFile.value = null
+  compressionInfo.value = ''
+  compressedAvatarFile.value = null
   originalAvatarName.value = ''
-  zippedAvatarName.value = ''
+  compressedAvatarName.value = ''
   if (!file) return
 
-  if (!file.type.startsWith('image/')) {
-    avatarError.value = t('bottomNav.verify.error.uploadImageOnly')
+  if (!ALLOW_IMAGE_TYPES.includes(file.type as (typeof ALLOW_IMAGE_TYPES)[number])) {
+    avatarError.value = t('bottomNav.verify.error.invalidJpgPng', {
+      mime: file.type || t('bottomNav.verify.error.unknownMime'),
+    })
     input.value = ''
     return
   }
 
-  isZippingAvatar.value = true
+  if (file.size > MAX_ORIGINAL_MB * 1024 * 1024) {
+    avatarError.value = t('bottomNav.verify.error.imageTooLarge', { maxMb: MAX_ORIGINAL_MB })
+    input.value = ''
+    return
+  }
+
+  isCompressingAvatar.value = true
+  await nextTick()
   try {
-    const zip = new JSZip()
-    zip.file(file.name, file)
-    const blob = await zip.generateAsync({
-      type: 'blob',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 },
-    })
-    const baseName = file.name.replace(/\.[^/.]+$/, '') || 'avatar'
-    const zipName = `${baseName}.zip`
-    zippedAvatarFile.value = new File([blob], zipName, { type: 'application/zip' })
+    let compressed: File
+    try {
+      compressed = await compressImage(file)
+    } catch (error) {
+      console.error(error)
+      avatarError.value = t('bottomNav.verify.error.compressFailed')
+      return
+    }
+    compressedAvatarFile.value = compressed
     originalAvatarName.value = file.name
-    zippedAvatarName.value = zipName
-    zipInfo.value = `${zipName} (${formatBytes(blob.size)})`
-  } catch (error) {
-    avatarError.value = t('bottomNav.verify.error.zipFailed')
-    console.error(error)
+    compressedAvatarName.value = compressed.name
+    compressionInfo.value = `${compressed.name} (${formatBytes(compressed.size)})`
   } finally {
-    isZippingAvatar.value = false
+    isCompressingAvatar.value = false
     input.value = ''
   }
 }
@@ -113,10 +211,10 @@ function validateFields(): boolean {
     idFieldError.value = t('bottomNav.verify.validation.idRequired')
     ok = false
   }
-  if (isZippingAvatar.value) {
-    avatarFieldError.value = t('bottomNav.verify.validation.avatarZipping')
+  if (isCompressingAvatar.value) {
+    avatarFieldError.value = t('bottomNav.verify.validation.avatarCompressing')
     ok = false
-  } else if (!zippedAvatarFile.value) {
+  } else if (!compressedAvatarFile.value) {
     avatarFieldError.value = t('bottomNav.verify.validation.avatarRequired')
     ok = false
   }
@@ -131,7 +229,7 @@ async function handleSubmit() {
   if (verifyStore.isSubmitting) return
   submitError.value = ''
   if (!validateFields()) return
-  const file = zippedAvatarFile.value
+  const file = compressedAvatarFile.value
   if (!file) return
   try {
     await verifyStore.submitVerification({
@@ -220,22 +318,27 @@ async function handleSubmit() {
                       {{ originalAvatarName || $t('bottomNav.verify.form.avatarUpload') }}
                     </p>
                     <p class="text-xs text-[var(--color-muted)] mt-1">
-                      {{ isZippingAvatar ? $t('bottomNav.verify.form.zipping') : (zipInfo || $t('bottomNav.verify.form.autoZipHint')) }}
+                      {{ isCompressingAvatar ? $t('bottomNav.verify.form.compressing') : (compressionInfo || $t('bottomNav.verify.form.compressHint')) }}
                     </p>
                   </div>
                   <Upload class="w-5 h-5 text-primary shrink-0" />
-                  <input type="file" accept="image/*" class="hidden" @change="handleAvatarFileChange">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                    class="hidden"
+                    @change="handleAvatarFileChange"
+                  >
                 </label>
                 <p
                   v-if="avatarError"
                   class="text-xs text-danger font-medium leading-relaxed rounded-lg px-2.5 py-1.5
-                         border border-danger/20 bg-danger/5"
+                         border border-danger/20 bg-danger/5 whitespace-pre-line"
                   role="alert"
                 >
                   {{ avatarError }}
                 </p>
-                <p v-else-if="zippedAvatarName" class="text-xs text-success font-medium">
-                  {{ $t('bottomNav.verify.form.zippedDone', { file: zippedAvatarName }) }}
+                <p v-else-if="compressedAvatarName" class="text-xs text-success font-medium">
+                  {{ $t('bottomNav.verify.form.compressedDone', { file: compressedAvatarName }) }}
                 </p>
                 <p
                   v-if="avatarFieldError && !avatarError"
