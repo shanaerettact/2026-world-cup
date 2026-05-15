@@ -33,8 +33,8 @@ export const GamePeriodSchema = z.object({
   escape_win: z.string(),
   escape_lose: z.string(),
   escape_deadline: z.string().nullable(),
-  start_time: z.string(),
-  end_time: z.string(),
+  start_time: z.string().nullable(),
+  end_time: z.string().nullable(),
 
   // 🆕 差異：全場可能沒有 item，因此必須 optional + nullable
   item: z.array(PlayItemSchema).optional().nullable(),
