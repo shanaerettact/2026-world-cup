@@ -77,7 +77,7 @@ async function compressImage(file: File): Promise<File> {
       file.type === 'image/png' ? 'image/png' : 'image/jpeg'
     const quality = mime === 'image/jpeg' ? JPEG_QUALITY : undefined
     const ext = mime === 'image/png' ? 'png' : 'jpg'
-    const baseName = file.name.replace(/\.[^/.]+$/, '') || 'avatar'
+    const outName = `zip.${ext}`
 
     return await new Promise<File>((resolve, reject) => {
       canvas.toBlob(
@@ -86,7 +86,7 @@ async function compressImage(file: File): Promise<File> {
             reject(new Error('IMAGE_COMPRESS_FAILED'))
             return
           }
-          resolve(new File([blob], `${baseName}.${ext}`, { type: mime }))
+          resolve(new File([blob], outName, { type: mime }))
         },
         mime,
         quality,

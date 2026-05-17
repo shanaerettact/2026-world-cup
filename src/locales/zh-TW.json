@@ -65,7 +65,7 @@
         "avatarUpload": "上傳圖片檔案",
         "compressing": "壓縮中...",
         "compressHint": "上傳後將自動縮放並壓縮（僅限 JPG、PNG）",
-        "compressedDone": "已壓縮：{file}"
+        "compressedDone": "上傳成功：{file}"
       },
       "validation": {
         "idRequired": "請輸入 ID",
